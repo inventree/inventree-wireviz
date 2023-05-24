@@ -22,7 +22,7 @@ from django.db import transaction
 from plugin import InvenTreePlugin
 from plugin.mixins import EventMixin, PanelMixin, SettingsMixin
 
-from part.models import Part, PartAttachment
+from part.models import BomItem, Part, PartAttachment
 from part.views import PartDetail
 
 from .version import PLUGIN_VERSION
@@ -47,6 +47,9 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
     SLUG = "wireviz"
     TITLE = "Wireviz Plugin"
 
+    ERROR_MSG_FILE = 'wireviz_errors.txt'
+    WARNING_MSG_FILE = "wireviz_warnings.txt"
+
     SETTINGS = {
         "WIREVIZ_PATH": {
             'name': 'Wireviz Upload Path',
@@ -57,20 +60,35 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             'name': 'Extract BOM Data',
             'description': 'Automatically extract BOM data from wireviz diagrams',
             'default': True,
-            'valitator': bool,
+            'validator': bool,
         },
         "CLEAR_BOM_DATA": {
             'name': 'Clear BOM Data',
             'description': 'Clear existing BOM data when uploading a new wireviz diagram',
             'default': True,
-            'valitator': bool,
+            'valdtator': bool,
         }
     }
 
     def get_panel_context(self, view, request, context):
         """Return context information for the Wireviz panel."""
 
-        # TODO
+        try:
+            part = view.get_object()
+        except AttributeError:
+            return context
+        
+        if isinstance(view, PartDetail) and isinstance(part, Part):
+            # Extract any wireviz errors from the part attachments
+            for attachment in part.attachments.all():
+                if attachment.filename == self.ERROR_MSG_FILE:
+                    context['wireviz_errors'] = attachment.attachment.read().decode().split("\n")
+
+                if attachment.filename == self.WARNING_MSG_FILE:
+                    context['wireviz_warnings'] = attachment.attachment.read().decode().split("\n")
+
+                print("context file:", attachment.filename)
+
 
         return context
 
@@ -150,7 +168,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         filename = os.path.join(settings.MEDIA_ROOT, wv_file)
 
         if not os.path.exists(filename):
-            logger.error(f"WirevizPlugin: File does not exist: {filename}")
+            self.add_error(f"File does not exist: {filename}")
             return
         
         with open(filename, 'r') as f:
@@ -167,14 +185,16 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
         # Construct a list of error messages to display to the user
         self.errors = []
+        self.warnings = []
 
         if self.get_setting('EXTRACT_BOM'):
             self.extract_bom_data(harness)
 
         self.generate_html_output(harness)
 
-        # Generate BOM data
-        bom = harness.bom()
+        # Save any error messages to a file
+        self.save_error_file()
+        self.save_warning_file()
 
     def prepend_wireviz_data(self):
         """Load (and prepend) any custom wireviz templates.
@@ -204,7 +224,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
                             prepend_data += '\n\n'
             
             else:
-                logger.warning(f"WirevizPlugin: Wireviz path does not exist: {path}")
+                self.add_warning(f"Path does not exist: {path}")
 
         return prepend_data
 
@@ -225,10 +245,31 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             self.part.bom_items.all().delete()
 
         for line in bom:
-            if part := self.match_part(line):
-                logger.debug(f"WirevizPlugin: Matched part: {part}")
-            else:
-                logger.warning(f"WirevizPlugin: No matching part for line: {line}")
+            description = line.get('description', None)
+            quantity = line.get('quantity', None)
+
+            if not description:
+                self.add_error(f"No description for line: {line}")
+                continue
+
+            try:
+                quantity = float(quantity)
+            except (TypeError, ValueError):
+                self.add_error(f"Invalid quantity for line: {line}")
+                continue
+
+            sub_part = self.match_part(line)
+
+            if not sub_part:
+                self.add_error(f"No matching part for line: {description}")
+                continue
+        
+            # At this point, we have a matching part, and quantity value
+            BomItem.objects.create(
+                part=self.part,
+                sub_part=sub_part,
+                quantity=quantity,
+            )
 
     def match_part(self, line: dict):
         """Attempt to match a BOM line item to an InvenTree part.
@@ -244,6 +285,8 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
         # Extract part number from line
         if pn := line.get('pn', None):
+
+            print("searching by PN:", pn)
 
             # Try to match by part name
             part = Part.objects.filter(name=pn).first()
@@ -280,3 +323,55 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         )
         """
         ...
+
+    def add_error(self, msg: str):
+        """Add an error message to the list of errors."""
+
+        self.errors.append(msg)
+        logger.error(f"WireViz: {msg}")
+
+    def add_warning(self, msg: str):
+        """Add a warning message to the list of errors."""
+
+        self.warnings.append(msg)
+        logger.warning(f"WireViz: {msg}")
+
+    def save_error_file(self):
+        """Save an error file containing all error messages"""
+
+        # First, delete any existing error file
+        for attachment in self.part.attachments.all():
+            if attachment.filename == self.ERROR_MSG_FILE:
+                attachment.delete()
+        
+        # Create a new error file
+        if len(self.errors) > 0:
+            PartAttachment.objects.create(
+                part=self.part,
+                attachment=ContentFile(
+                    '\n'.join(self.errors).encode(),
+                    name=self.ERROR_MSG_FILE,
+                ),
+                comment=f'Wireviz Error Messages',
+                user=None
+            )
+    
+    def save_warning_file(self):
+        """Save a warning file containing all warning messages"""
+
+        # First, delete any existing warning file
+        for attachment in self.part.attachments.all():
+            if attachment.filename == self.WARNING_MSG_FILE:
+                attachment.delete()
+        
+        # Create a new warning file
+        if len(self.warnings) > 0:
+            PartAttachment.objects.create(
+                part=self.part,
+                attachment=ContentFile(
+                    '\n'.join(self.warnings).encode(),
+                    name=self.WARNING_MSG_FILE,
+                ),
+                comment=f'Wireviz Warning Messages',
+                user=None
+            )

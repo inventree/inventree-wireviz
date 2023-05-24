@@ -1,3 +1,25 @@
 <h5>Harness Drawing</h5>
 
+{% if wireviz_errors %}
+<div class='alert alert-info alert-danger'>
+    <b>The following errors were encountered while processing the wireviz file:</b>
+    <ul>
+    {% for err in wireviz_errors %}
+    <li>{{ err }}</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if wireviz_warnings %}
+<div class='alert alert-info alert-warnings'>
+    <b>The following warnings were encountered while processing the wireviz file:</b>
+    <ul>
+    {% for warn in wireviz_warnings %}
+    <li>{{ warn }}</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 <div class='alert alert-info alert-danger'>why hello there</div>
