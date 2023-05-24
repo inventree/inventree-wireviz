@@ -49,7 +49,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
     SLUG = "wireviz"
     TITLE = "Wireviz Plugin"
 
-    HARNESS_SVG_FILE = "wireviz_harness.png"
+    HARNESS_HTML_FILE = "wireviz_harness.html"
     ERROR_MSG_FILE = 'wireviz_errors.txt'
     WARNING_MSG_FILE = "wireviz_warnings.txt"
 
@@ -79,13 +79,13 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         },
     }
 
-    def get_harness_filename(self, part: Part):
+    def get_harness_data(self, part: Part):
         """Return the harness html data for the part."""
             
         for attachment in part.attachments.all():
             fn = attachment.attachment.name
-            if os.path.basename(fn) == self.HARNESS_SVG_FILE:
-                return os.path.join(settings.MEDIA_URL, attachment.attachment.name)
+            if os.path.basename(fn) == self.HARNESS_HTML_FILE:
+                return attachment.attachment.read().decode()
     
         return None
 
@@ -102,8 +102,8 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             for attachment in part.attachments.all():
                 fn = attachment.attachment.name
 
-                if harness_file := self.get_harness_filename(part):
-                    context['wireviz_harness_svg'] = harness_file
+                if harness_html := self.get_harness_data(part):
+                    context['wireviz_harness_html'] = harness_html
 
                 if os.path.basename(fn) == self.ERROR_MSG_FILE:
                     context['wireviz_errors'] = attachment.attachment.read().decode().split("\n")
@@ -235,8 +235,11 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
     def add_part_images(self, harness: Harness):
         """Add part images to the wireviz harness"""
         
-        logger.info(f"WirevizPlugin: Adding part images to wireviz harness")
+        logger.warning(f"WirevizPlugin: Adding part images is not yet supported")
+        
+        # TODO: Implement native image support
 
+        """
         # Path to part images directory
         img_path = pathlib.Path(settings.MEDIA_ROOT)
 
@@ -262,7 +265,8 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
                 harness.connectors[designator].image = img
             if designator in harness.cables:
                 harness.cables[designator].image = img
-
+        """
+                
     @transaction.atomic
     def extract_bom_data(self, harness: Harness):
         """Extract Bill of Materials data from a wireviz harness.
@@ -355,7 +359,8 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         for attachment in self.part.attachments.all():
             if attachment.attachment.name == self.HARNESS_SVG_FILE:
                 attachment.delete()
-        
+
+
         # Encode raw svg data
         svg_data = harness.png.decode('latin1')
 
