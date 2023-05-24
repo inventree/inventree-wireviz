@@ -2,6 +2,8 @@
 
 # inventree-wireviz
 
+The **inventree-wireviz** plugin provides direct integration for [wireviz](https://github.com/formatc1702/WireViz), a text-based wiring harness specification tool.
+
 TODO: Description
 
 ## Installation
