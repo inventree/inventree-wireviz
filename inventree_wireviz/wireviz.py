@@ -127,7 +127,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
             logger.info(f"Checking for wireviz file for part {part}")
 
-            if self.get_harness_data():
+            if self.get_harness_data(part):
                 panels.append({
                     'title': 'WireViz Harness',
                     'icon': 'fas fa-plug',
