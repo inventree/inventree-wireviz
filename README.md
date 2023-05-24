@@ -6,6 +6,17 @@ TODO: Description
 
 ## Installation
 
+### System Requirements
+
+You must have [graphviz](https://graphviz.org/) installed, and accessible by the InvenTree server.
+
 ## Configuration
 
 ## Documentation
+
+### Wireviz Documentation
+
+Documentation on the capabilites of wireviz itself:
+
+- https://github.com/formatc1702/WireViz/blob/master/docs/README.md
+- https://github.com/formatc1702/WireViz/blob/master/docs/syntax.md
