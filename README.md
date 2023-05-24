@@ -1,4 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![PEP](https://github.com/inventree/inventree-wireviz/actions/workflows/pep.yaml/badge.svg)
 
 # inventree-wireviz
 
