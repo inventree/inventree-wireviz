@@ -275,7 +275,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         """Extract Bill of Materials data from a wireviz harness.
         
         Arguments:
-            harness: A wireviz Harness instance        
+            harness: A wireviz Harness instance
         """
         logger.info("WirevizPlugin: Extracting BOM data from wireviz harness")
 
@@ -324,7 +324,6 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             
             # Create the new BomItem objects in the database
             BomItem.objects.bulk_create(bom_items)
-
 
     def match_part(self, line: dict):
         """Attempt to match a BOM line item to an InvenTree part.
