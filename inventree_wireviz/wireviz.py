@@ -6,12 +6,12 @@ Provides integration of "wireviz" into the InvenTree system:
 - Extract and integrate bills of materials from wireviz diagrams
 """
 
-import io
-import os
 import logging
+import os
+import tempfile
 
-from wireviz.wireviz import parse as parse_wireviz
 from wireviz.Harness import Harness
+from wireviz.wireviz import parse as parse_wireviz
 from wireviz.wv_bom import bom_list
 from wireviz.wv_html import generate_html_output
 
@@ -22,7 +22,7 @@ from django.db import transaction
 from plugin import InvenTreePlugin
 from plugin.mixins import EventMixin, PanelMixin, SettingsMixin
 
-from part.models import Part, PartAttachment
+from part.models import BomItem, Part, PartAttachment
 from part.views import PartDetail
 
 from .version import PLUGIN_VERSION
@@ -47,6 +47,10 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
     SLUG = "wireviz"
     TITLE = "Wireviz Plugin"
 
+    HARNESS_HTML_FILE = "wireviz_harness.html"
+    ERROR_MSG_FILE = 'wireviz_errors.txt'
+    WARNING_MSG_FILE = "wireviz_warnings.txt"
+
     SETTINGS = {
         "WIREVIZ_PATH": {
             'name': 'Wireviz Upload Path',
@@ -57,20 +61,53 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             'name': 'Extract BOM Data',
             'description': 'Automatically extract BOM data from wireviz diagrams',
             'default': True,
-            'valitator': bool,
+            'validator': bool,
         },
         "CLEAR_BOM_DATA": {
             'name': 'Clear BOM Data',
             'description': 'Clear existing BOM data when uploading a new wireviz diagram',
             'default': True,
-            'valitator': bool,
-        }
+            'validator': bool,
+        },
+        'ADD_IMAGES': {
+            'name': 'Add Part Images',
+            'description': 'Include part images in the wireviz diagram (not yet implemeted)',
+            'default': True,
+            'validator': bool,
+        },
     }
+
+    def get_harness_data(self, part: Part):
+        """Return the harness html data for the part."""
+            
+        for attachment in part.attachments.all():
+            fn = attachment.attachment.name
+            if os.path.basename(fn) == self.HARNESS_HTML_FILE:
+                return attachment.attachment.read().decode()
+    
+        return None
 
     def get_panel_context(self, view, request, context):
         """Return context information for the Wireviz panel."""
 
-        # TODO
+        try:
+            part = view.get_object()
+        except AttributeError:
+            return context
+        
+        if isinstance(view, PartDetail) and isinstance(part, Part):
+            # Extract any wireviz errors from the part attachments
+            for attachment in part.attachments.all():
+                fn = attachment.attachment.name
+
+                if harness_html := self.get_harness_data(part):
+                    context['wireviz_harness_html'] = harness_html
+
+                if os.path.basename(fn) == self.ERROR_MSG_FILE:
+                    context['wireviz_errors'] = attachment.attachment.read().decode().split("\n")
+
+                if os.path.basename(fn) == self.WARNING_MSG_FILE:
+                    context['wireviz_warnings'] = attachment.attachment.read().decode().split("\n")
 
         return context
 
@@ -89,34 +126,15 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
             logger.info(f"Checking for wireviz file for part {part}")
 
-            if True or self.get_harness_file(part) is not None:
-
+            if self.get_harness_data(part):
                 panels.append({
-                    'title': 'Wire Harness',
+                    'title': 'WireViz Harness',
                     'icon': 'fas fa-plug',
                     'content_template': 'wireviz/harness_panel.html',
                     'javascript_template': 'wireviz/harness_panel.js',
                 })
         
         return panels
-
-    def get_harness_file(self, part):
-        """Return the harness file associated with a given Part instance.
-        
-        - Look for any files with the .wireviz extension
-        - Return the first one found (latest date first)
-
-        Arguments:
-            part: The Part instance to check
-        
-        Returns:
-            The first matching WirevizFile instance, or None
-        """
-
-        # Check if any attachment has the correct format
-        for attachment in part.attachments.all().order_by('-upload_date'):
-            if attachment.filename.lower().endswith('.wireviz'):
-                return attachment
 
     def process_event(self, event, *args, **kwargs):
         """Callback for event processing.
@@ -144,13 +162,18 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
     
     def process_wireviz_file(self, wv_file: str, part: Part = None):
         """Process a wireviz file, and extract the relevant information."""
+
         logger.info(f"WirevizPlugin: Processing wireviz file: {wv_file}")
+
+        self.errors = []
+        self.warnings = []
+        self.part_map = {}
 
         # Parse the wireviz file
         filename = os.path.join(settings.MEDIA_ROOT, wv_file)
 
         if not os.path.exists(filename):
-            logger.error(f"WirevizPlugin: File does not exist: {filename}")
+            self.add_error(f"File does not exist: {filename}")
             return
         
         with open(filename, 'r') as f:
@@ -165,16 +188,17 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             return_types='harness',
         )
 
-        # Construct a list of error messages to display to the user
-        self.errors = []
+        # Extract BOM data from the harness
+        self.extract_bom_data(harness)
 
-        if self.get_setting('EXTRACT_BOM'):
-            self.extract_bom_data(harness)
+        if self.get_setting("ADD_IMAGES"):
+            self.add_part_images(harness)
 
         self.generate_html_output(harness)
 
-        # Generate BOM data
-        bom = harness.bom()
+        # Save any error messages to a file
+        self.save_error_file()
+        self.save_warning_file()
 
     def prepend_wireviz_data(self):
         """Load (and prepend) any custom wireviz templates.
@@ -202,33 +226,104 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
                         with open(filepath, 'r') as f:
                             prepend_data += f.read()
                             prepend_data += '\n\n'
-            
-            else:
-                logger.warning(f"WirevizPlugin: Wireviz path does not exist: {path}")
 
         return prepend_data
 
+    def add_part_images(self, harness: Harness):
+        """Add part images to the wireviz harness"""
+        
+        logger.warning("WirevizPlugin: Adding part images is not yet supported")
+        
+        # For now, strip out any images
+        for ref in harness.connectors:
+            harness.connectors[ref].image = None
+        for ref in harness.cables:
+            harness.cables[ref].image = None
+
+        # TODO: Implement native image support
+
+        """
+        # Path to part images directory
+        img_path = pathlib.Path(settings.MEDIA_ROOT)
+
+        for designator, part in self.part_map.items():
+
+            logger.debug(f"Checking image for {designator} - {part}")
+
+            # Check if the part has an image
+            if not part.image:
+                continue
+
+            # Check if the image exists
+            img_filename = pathlib.Path(img_path, part.image.name)
+
+            if not img_filename.exists():
+                continue
+
+            # Construct a new image object associated with the part
+            img = WirevizImage(img_filename, src=part.image.name, width=100)
+
+            # Add the image to the harness
+            if designator in harness.connectors:
+                harness.connectors[designator].image = img
+            if designator in harness.cables:
+                harness.cables[designator].image = img
+        """
+                
     @transaction.atomic
     def extract_bom_data(self, harness: Harness):
         """Extract Bill of Materials data from a wireviz harness.
         
         Arguments:
-            harness: A wireviz Harness instance        
+            harness: A wireviz Harness instance
         """
-        logger.info(f"WirevizPlugin: Extracting BOM data from wireviz harness")
+        logger.info("WirevizPlugin: Extracting BOM data from wireviz harness")
 
         bom = harness.bom()
 
-        # Clear existing BOM data
-        if self.get_setting('CLEAR_BOM_DATA'):
-            logger.info(f"WirevizPlugin: Clearing existing BOM data for part {self.part}")
-            self.part.bom_items.all().delete()
+        # A list of BomItem objects to be created
+        bom_items = []
 
         for line in bom:
-            if part := self.match_part(line):
-                logger.debug(f"WirevizPlugin: Matched part: {part}")
-            else:
-                logger.warning(f"WirevizPlugin: No matching part for line: {line}")
+            designators = line.get('designators', [])
+            description = line.get('description', None)
+            quantity = line.get('qty', None)
+
+            if not description:
+                self.add_error(f"No description for line: {line}")
+                continue
+
+            try:
+                quantity = float(quantity)
+            except (TypeError, ValueError):
+                self.add_error(f"Invalid quantity for line: {line}")
+                continue
+
+            sub_part = self.match_part(line)
+
+            if not sub_part:
+                self.add_warning(f"No matching part for line: {description}")
+                continue
+
+            # Associate the internal part with the designators
+            for designator in designators:
+                self.part_map[designator] = sub_part
+
+            # Construct a new BomItem object
+            bom_items.append(BomItem(
+                part=self.part,
+                sub_part=sub_part,
+                quantity=quantity,
+                note="Wireviz BOM item"
+            ))
+
+        if self.get_setting('EXTRACT_BOM'):
+            if self.get_setting('CLEAR_BOM_DATA'):
+                logger.info(f"WirevizPlugin: Clearing existing BOM data for part {self.part}")
+                self.part.bom_items.all().delete()
+            
+            # Create the new BomItem objects in the database
+            BomItem.objects.bulk_create(bom_items)
 
     def match_part(self, line: dict):
         """Attempt to match a BOM line item to an InvenTree part.
@@ -252,31 +347,95 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             if not part:
                 part = Part.objects.filter(IPN=pn).first()
 
-        # TODO: Try to match by description?
-
-        # TODO: Try to match by MPN?
-
-        # TODO: Try to match by manufacturer?
-
-        # TODO: Try to match by supplier?
-
         # TODO: Try to match by other methods?
 
         return part
-
+    
+    @transaction.atomic
     def generate_html_output(self, harness: Harness):
         """Generate HTML output from a wireviz harness."""
 
-        """
+        logger.info("WirevizPlugin: Generating HTML output for wireviz harness")
+
+        # Delete existing HTML output
+        for attachment in self.part.attachments.all():
+            if attachment.attachment.name == self.HARNESS_HTML_FILE:
+                attachment.delete()
+
+        bomlist = bom_list(harness.bom())
+
+        # For now, we must write to a tempfile
+        # In the future, work out how to write to an in-memory file object
+        out_file = os.path.join(tempfile.gettempdir(), 'harness_out')
+        
+        harness.output(filename=out_file, fmt=('svg',), view=False)
+        generate_html_output(out_file, bomlist, harness.metadata, harness.options)
+
+        # Read the data back in
+        with open(out_file + '.html', 'r') as f:
+            html_data = f.read()
+
         # Create a new PartAttachment for the rendered HTML
         PartAttachment.objects.create(
             part=self.part,
             attachment=ContentFile(
-                html_file.getvalue().encode(),
-                name='wireviz_harness.html',
+                html_data,
+                name=self.HARNESS_HTML_FILE,
             ),
-            comment=f'Wireviz Harness (autogenerated from {wv_file})',
+            comment='Wireviz Harness (autogenerated from .wireviz file)',
             user=None
         )
-        """
-        ...
+
+    def add_error(self, msg: str):
+        """Add an error message to the list of errors."""
+
+        self.errors.append(msg)
+        logger.error(f"WireViz: {msg}")
+
+    def add_warning(self, msg: str):
+        """Add a warning message to the list of errors."""
+
+        self.warnings.append(msg)
+        logger.warning(f"WireViz: {msg}")
+
+    @transaction.atomic
+    def save_error_file(self):
+        """Save an error file containing all error messages"""
+
+        # First, delete any existing error file
+        for attachment in self.part.attachments.all():
+            if attachment.attachment.name == self.ERROR_MSG_FILE:
+                attachment.delete()
+        
+        # Create a new error file
+        if len(self.errors) > 0:
+            PartAttachment.objects.create(
+                part=self.part,
+                attachment=ContentFile(
+                    '\n'.join(self.errors).encode(),
+                    name=self.ERROR_MSG_FILE,
+                ),
+                comment='Wireviz Error Messages',
+                user=None
+            )
+    
+    @transaction.atomic
+    def save_warning_file(self):
+        """Save a warning file containing all warning messages"""
+
+        # First, delete any existing warning file
+        for attachment in self.part.attachments.all():
+            if attachment.attachment.name == self.WARNING_MSG_FILE:
+                attachment.delete()
+        
+        # Create a new warning file
+        if len(self.warnings) > 0:
+            PartAttachment.objects.create(
+                part=self.part,
+                attachment=ContentFile(
+                    '\n'.join(self.warnings).encode(),
+                    name=self.WARNING_MSG_FILE,
+                ),
+                comment='Wireviz Warning Messages',
+                user=None
+            )

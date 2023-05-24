@@ -14,8 +14,15 @@ You must have [graphviz](https://graphviz.org/) installed, and accessible by the
 
 ## Configuration
 
+**TODO**
 ## Documentation
 
+### Template Files
+
+**TODO**
+### Part Images
+
+**TODO**
 ### Wireviz Documentation
 
 Documentation on the capabilites of wireviz itself:
