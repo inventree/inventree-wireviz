@@ -47,6 +47,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
     SLUG = "wireviz"
     TITLE = "Wireviz Plugin"
 
+    HARNESS_HTML_FILE = "wirevis_harness.html"
     ERROR_MSG_FILE = 'wireviz_errors.txt'
     WARNING_MSG_FILE = "wireviz_warnings.txt"
 
@@ -66,9 +67,24 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             'name': 'Clear BOM Data',
             'description': 'Clear existing BOM data when uploading a new wireviz diagram',
             'default': True,
-            'valdtator': bool,
-        }
+            'validator': bool,
+        },
+        'ADD_IMAGES': {
+            'name': 'Add Part Images',
+            'description': 'Include part images in the wireviz diagram',
+            'default': True,
+            'validator': bool,
+        },
     }
+
+    def get_harness_data(self):
+        """Return the harness html data for the part."""
+            
+        for attachment in self.part.attachments.all():
+            if attachment.attachment.name == self.HARNESS_HTML_FILE:
+                return attachment.attachment.read().decode()
+        
+        return None
 
     def get_panel_context(self, view, request, context):
         """Return context information for the Wireviz panel."""
@@ -81,14 +97,18 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         if isinstance(view, PartDetail) and isinstance(part, Part):
             # Extract any wireviz errors from the part attachments
             for attachment in part.attachments.all():
-                if attachment.filename == self.ERROR_MSG_FILE:
+                fn = attachment.attachment.name
+
+                if harness_data := self.get_harness_data():
+                    context['wireviz_harness_data'] = harness_data
+
+                if os.path.basename(fn) == self.ERROR_MSG_FILE:
                     context['wireviz_errors'] = attachment.attachment.read().decode().split("\n")
 
-                if attachment.filename == self.WARNING_MSG_FILE:
+                if os.path.basename(fn) == self.WARNING_MSG_FILE:
                     context['wireviz_warnings'] = attachment.attachment.read().decode().split("\n")
 
-                print("context file:", attachment.filename)
-
+                print("context file:", attachment.attachment.name)
 
         return context
 
@@ -107,34 +127,15 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
             logger.info(f"Checking for wireviz file for part {part}")
 
-            if True or self.get_harness_file(part) is not None:
-
+            if True or self.get_harness_data():
                 panels.append({
-                    'title': 'Wire Harness',
+                    'title': 'WireViz Harness',
                     'icon': 'fas fa-plug',
                     'content_template': 'wireviz/harness_panel.html',
                     'javascript_template': 'wireviz/harness_panel.js',
                 })
         
         return panels
-
-    def get_harness_file(self, part):
-        """Return the harness file associated with a given Part instance.
-        
-        - Look for any files with the .wireviz extension
-        - Return the first one found (latest date first)
-
-        Arguments:
-            part: The Part instance to check
-        
-        Returns:
-            The first matching WirevizFile instance, or None
-        """
-
-        # Check if any attachment has the correct format
-        for attachment in part.attachments.all().order_by('-upload_date'):
-            if attachment.filename.lower().endswith('.wireviz'):
-                return attachment
 
     def process_event(self, event, *args, **kwargs):
         """Callback for event processing.
@@ -164,6 +165,9 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         """Process a wireviz file, and extract the relevant information."""
         logger.info(f"WirevizPlugin: Processing wireviz file: {wv_file}")
 
+        self.errors = []
+        self.warnings = []
+
         # Parse the wireviz file
         filename = os.path.join(settings.MEDIA_ROOT, wv_file)
 
@@ -184,11 +188,12 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         )
 
         # Construct a list of error messages to display to the user
-        self.errors = []
-        self.warnings = []
 
         if self.get_setting('EXTRACT_BOM'):
             self.extract_bom_data(harness)
+
+        if self.get_setting("ADD_IMAGES"):
+            self.add_part_images(harness)
 
         self.generate_html_output(harness)
 
@@ -228,6 +233,11 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
         return prepend_data
 
+    def add_part_images(self, harness: Harness):
+        """Add part images to the wireviz harness"""
+        ...
+
+
     @transaction.atomic
     def extract_bom_data(self, harness: Harness):
         """Extract Bill of Materials data from a wireviz harness.
@@ -246,7 +256,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
         for line in bom:
             description = line.get('description', None)
-            quantity = line.get('quantity', None)
+            quantity = line.get('qty', None)
 
             if not description:
                 self.add_error(f"No description for line: {line}")
@@ -261,7 +271,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             sub_part = self.match_part(line)
 
             if not sub_part:
-                self.add_error(f"No matching part for line: {description}")
+                self.add_warning(f"No matching part for line: {description}")
                 continue
         
             # At this point, we have a matching part, and quantity value
@@ -269,6 +279,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
                 part=self.part,
                 sub_part=sub_part,
                 quantity=quantity,
+                note="Wireviz BOM item"
             )
 
     def match_part(self, line: dict):
@@ -306,9 +317,17 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         # TODO: Try to match by other methods?
 
         return part
-
+    
+    @transaction.atomic
     def generate_html_output(self, harness: Harness):
         """Generate HTML output from a wireviz harness."""
+
+        logger.info(f"WirevizPlugin: Generating HTML output for wireviz harness")
+
+        # TODO: Remove existing HTML output (if it exists)
+        # TODO: Generate temporary SVG file
+        # TODO: Generate HTML output
+        # TODO: Save HTML file as PartAttachment
 
         """
         # Create a new PartAttachment for the rendered HTML
@@ -336,12 +355,13 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         self.warnings.append(msg)
         logger.warning(f"WireViz: {msg}")
 
+    @transaction.atomic
     def save_error_file(self):
         """Save an error file containing all error messages"""
 
         # First, delete any existing error file
         for attachment in self.part.attachments.all():
-            if attachment.filename == self.ERROR_MSG_FILE:
+            if attachment.attachment.name == self.ERROR_MSG_FILE:
                 attachment.delete()
         
         # Create a new error file
@@ -356,12 +376,13 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
                 user=None
             )
     
+    @transaction.atomic
     def save_warning_file(self):
         """Save a warning file containing all warning messages"""
 
         # First, delete any existing warning file
         for attachment in self.part.attachments.all():
-            if attachment.filename == self.WARNING_MSG_FILE:
+            if attachment.attachment.name == self.WARNING_MSG_FILE:
                 attachment.delete()
         
         # Create a new warning file

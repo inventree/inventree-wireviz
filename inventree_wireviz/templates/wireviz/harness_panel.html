@@ -22,4 +22,13 @@
 </div>
 {% endif %}
 
-<div class='alert alert-info alert-danger'>why hello there</div>
+<!-- TODO: Render the harness diagram here -->
+{% if wireviz_harness_data %}
+<div id='wireviz-harness-data'>
+    {{ wireviz_harness_data }}
+</div>
+{% else %}
+<div class='alert alert-info alert-block'>
+    "No harness data available for this part"
+</div>
+{% endif %}
