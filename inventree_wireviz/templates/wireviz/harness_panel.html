@@ -1,5 +1,3 @@
-<h5>Harness Drawing</h5>
-
 {% if wireviz_errors %}
 <div class='alert alert-info alert-danger'>
     <b>The following errors were encountered while processing the wireviz file:</b>
@@ -22,13 +20,25 @@
 </div>
 {% endif %}
 
-<!-- TODO: Render the harness diagram here -->
-{% if wireviz_harness_data %}
-<div id='wireviz-harness-data'>
-    {{ wireviz_harness_data }}
+{% if wireviz_harness_svg %}
+<div id='wireviz-harness-svg' style='width: 100%;'>
+    <img src='{{ wireviz_harness_svg }}' class='img-fluid' alt='Harness diagram' />
 </div>
 {% else %}
 <div class='alert alert-info alert-block'>
-    "No harness data available for this part"
+    No harness diagram available for this part.<br>
+    Upload a .wireviz file to generate a harness diagram.
+</div>
+{% endif %}
+
+{% if wireviz_bom_data %}
+<div id='wireviz-bom-data'>
+    <table class='table table-striped table-condensed'>
+        <thead>
+            <tr>
+                <th></th>
+            </tr>
+        </thead>
+    </table>
 </div>
 {% endif %}
