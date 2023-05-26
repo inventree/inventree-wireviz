@@ -195,6 +195,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         if self.get_setting("ADD_IMAGES"):
             self.add_part_images(harness)
 
+        self.save_bom_data()
         self.generate_html_output(harness)
 
         # Save any error messages to a file
@@ -278,7 +279,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         bom = harness.bom()
 
         # A list of BomItem objects to be created
-        bom_items = []
+        self.bom_items = []
 
         for line in bom:
             designators = line.get('designators', [])
@@ -310,20 +311,29 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
                 self.part_map[designator] = sub_part
 
             # Construct a new BomItem object
-            bom_items.append(BomItem(
+            self.bom_items.append(BomItem(
                 part=self.part,
                 sub_part=sub_part,
                 quantity=quantity,
                 note="Wireviz BOM item"
             ))
 
-        if self.get_setting('EXTRACT_BOM'):
-            if self.get_setting('CLEAR_BOM_DATA'):
-                logger.info(f"WirevizPlugin: Clearing existing BOM data for part {self.part}")
-                self.part.bom_items.all().delete()
-            
-            # Create the new BomItem objects in the database
-            BomItem.objects.bulk_create(bom_items)
+    def save_bom_data(self):
+        """Write the extracted BOM data to the database."""
+
+        if not self.get_setting('EXTRACT_BOM'):
+            return
+        
+        if len(self.errors) > 0:
+            self.add_warning("Not saving BOM data due to errors")
+            return
+
+        if self.get_setting('CLEAR_BOM_DATA'):
+            logger.info(f"WirevizPlugin: Clearing existing BOM data for part {self.part}")
+            self.part.bom_items.all().delete()
+        
+        # Create the new BomItem objects in the database
+        BomItem.objects.bulk_create(self.bom_items)
 
     def match_part(self, line: dict):
         """Attempt to match a BOM line item to an InvenTree part.
