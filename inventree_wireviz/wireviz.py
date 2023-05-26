@@ -526,6 +526,11 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             The converted quantity, or the original quantity if conversion failed
         """
 
+        # Ignore unit if quantity not given
+        # Will be specified in the part units anyway
+        if not unit:
+            return quantity
+
         logger.debug(f"WirevizPlugin: Converting quantity {quantity} {unit} to {base_unit}")
 
         q = f"{quantity} {unit}"
