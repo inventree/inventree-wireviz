@@ -184,10 +184,17 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             wireviz_data = prepend + wireviz_data
 
         # Parse the wireviz data
-        harness = parse_wireviz(
-            wireviz_data,
-            return_types='harness',
-        )
+        try:
+            harness = parse_wireviz(
+                wireviz_data,
+                return_types='harness',
+            )
+        except Exception as exc:
+            logger.error(f"WirevizPlugin: Failed to parse wireviz file: {exc}")
+
+            from InvenTree.exceptions import log_error
+            log_error("Wireviz Import")
+            return
 
         # Extract BOM data from the harness
         self.extract_bom_data(harness)
