@@ -337,6 +337,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
                 part=self.part,
                 sub_part=sub_part,
                 quantity=quantity,
+                reference=' '.join(designators),
                 note="Wireviz BOM item"
             ))
 
