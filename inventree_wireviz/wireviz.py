@@ -59,6 +59,12 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             'description': 'Path to store uploaded wireviz template files (relative to media root)',
             'default': 'wireviz',
         },
+        "DELETE_OLD_FILES": {
+            'name': 'Delete Old Files',
+            'description': 'Delete old wireviz files when uploading a new wireviz file',
+            'default': True,
+            'validator': bool,
+        },
         "EXTRACT_BOM": {
             'name': 'Extract BOM Data',
             'description': 'Automatically extract BOM data from wireviz diagrams',
@@ -159,6 +165,20 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
                 # Check if the attachment is a .wireviz file
                 if filename.endswith(".wireviz"):
                     self.process_wireviz_file(filename)
+
+                    # Delete *old* wireviz files
+                    if self.get_setting('DELETE_OLD_FILES'):
+                        for attach in PartAttachment.objects.filter(part=self.part):
+                            # Don't delete this one!
+                            if attach.pk == attachment.pk:
+                                continue
+
+                            fn = attach.attachment.name
+
+                            # Delete old wireviz files
+                            if fn.endswith(".wireviz"):
+                                attach.delete()
+
             except PartAttachment.DoesNotExist:
                 pass
     
