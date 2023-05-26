@@ -1,3 +1,3 @@
 """Version information for the inventree-wireviz plugin"""
 
-PLUGIN_VERSION = "0.1.0"
+PLUGIN_VERSION = "0.2.0"

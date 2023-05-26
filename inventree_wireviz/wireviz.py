@@ -22,6 +22,7 @@ from django.db import transaction
 from plugin import InvenTreePlugin
 from plugin.mixins import EventMixin, PanelMixin, SettingsMixin
 
+from company.models import ManufacturerPart, SupplierPart
 from part.models import BomItem, Part, PartAttachment
 from part.views import PartDetail
 
@@ -215,13 +216,14 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
         if subdir:
             path = os.path.join(settings.MEDIA_ROOT, subdir)
+            path = os.path.abspath(path)
 
             if os.path.exists(path):
                 for filename in os.listdir(path):
                     if filename.lower().endswith('.wireviz'):
                         filepath = os.path.join(path, filename)
 
-                        logger.debug(f"WirevizPlugin: Loading wireviz template file: {filepath}")
+                        logger.info(f"WirevizPlugin: Loading wireviz template file: {filepath}")
 
                         with open(filepath, 'r') as f:
                             prepend_data += f.read()
@@ -234,12 +236,6 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         
         logger.warning("WirevizPlugin: Adding part images is not yet supported")
         
-        # For now, strip out any images
-        for ref in harness.connectors:
-            harness.connectors[ref].image = None
-        for ref in harness.cables:
-            harness.cables[ref].image = None
-
         # TODO: Implement native image support
 
         """
@@ -305,6 +301,10 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
                 self.add_warning(f"No matching part for line: {description}")
                 continue
 
+            if sub_part == self.part:
+                self.add_error(f"Part {sub_part} is the same as the parent part")
+                continue
+
             # Associate the internal part with the designators
             for designator in designators:
                 self.part_map[designator] = sub_part
@@ -335,21 +335,66 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             A Part instance, or None
         """
 
-        part = None
+        # Extract data from BOM entry
+        pn = line.get('pn', None)
+        description = line.get('description', None)
+        mpn = line.get('mpn', None)
+        spn = line.get('spn', None)
 
-        # Extract part number from line
-        if pn := line.get('pn', None):
+        # Match pn -> part.IPN
+        if pn:
+            results = Part.objects.filter(IPN=pn)
+            if results.count() == 1:
+                return results.first()
 
-            # Try to match by part name
-            part = Part.objects.filter(name=pn).first()
+            # Match pn -> part.name
+            results = Part.objects.filter(name=pn)
+            if results.count() == 1:
+                return results.first()
 
-            # Try to match by IPN
-            if not part:
-                part = Part.objects.filter(IPN=pn).first()
+        # Match description -> part.description
+        if description:
+            results = Part.objects.filter(description=description)
+            if results.count() == 1:
+                return results.first()
 
-        # TODO: Try to match by other methods?
+        # Match mpn -> manufacturer_part.MPN
+        if mpn:
+            results = ManufacturerPart.objects.filter(MPN=mpn)
+            if results.count() == 1:
+                return results.first().part
+        
+        # Match spn -> supplier_part.SKU
+        if spn:
+            results = SupplierPart.objects.filter(SKU=spn)
+            if results.count() == 1:
+                return results.first().part
 
-        return part
+        # For a 'wire', append the wire color and try again
+        if pn and description and description.startswith('Wire, '):
+            wire_data = [x.strip() for x in description.split(',')]
+
+            """
+            For individual wires, the PN does not include the color.
+            For example, a wire might have a PN "26AWG-PTFE"
+            To fully quality the wire, we need to append the color.
+            So, we might get a value like "26AWG-PTFE-YE" for a yellow wire.
+            """
+
+            if len(wire_data) >= 3:
+                color = wire_data[2]
+            
+            wire_pn = f"{pn}-{color}"
+
+            # Match wire_pn -> part.IPN
+            results = Part.objects.filter(IPN=wire_pn)
+            if results.count() == 1:
+                return results.first()
+        
+            # Match wire_pn -> part.name
+            results = Part.objects.filter(name=wire_pn)
+            if results.count() == 1:
+                return results.first()
     
     @transaction.atomic
     def generate_html_output(self, harness: Harness):
