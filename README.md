@@ -14,6 +14,8 @@ TODO: Description
 
 You must have [graphviz](https://graphviz.org/) installed, and accessible by the InvenTree server.
 
+e.g. `apt-get install graphviz`
+
 ## Configuration
 
 **TODO**
