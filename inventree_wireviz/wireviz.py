@@ -104,7 +104,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         for attachment in part.attachments.all():
             fn = attachment.attachment.name
 
-            if fn == self.HARNESS_HTML_FILE:
+            if fn == self.HARNESS_HTML_FILE or os.path.basename(fn) == self.HARNESS_HTML_FILE:
                 logger.debug(f"Found legacy wireviz diagram file: {fn}")
                 return attachment
         
