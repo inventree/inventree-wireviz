@@ -50,8 +50,6 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
     TITLE = "Wireviz Plugin"
 
     HARNESS_HTML_FILE = "wireviz_harness.html"
-    ERROR_MSG_FILE = 'wireviz_errors.txt'
-    WARNING_MSG_FILE = "wireviz_warnings.txt"
 
     SETTINGS = {
         "WIREVIZ_PATH": {
@@ -85,15 +83,32 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         },
     }
 
-    def get_harness_data(self, part: Part):
-        """Return the harness html data for the part."""
-            
+    def get_diagram_file(self, part: Part):
+        """Return the generated HTML file"""
+
+        metadata = part.get_metadata('wireviz')
+
+        # Primary: Find wireviz file specified in metadata
+        if metadata and 'diagram' in metadata:
+            filename = metadata['diagram']
+
+            if filename:
+                for attachment in part.attachments.all():
+                    fn = attachment.attachment.name
+
+                    if fn == filename or os.path.basename(fn) == filename:
+                        logger.debug(f"Found wireviz diagram file: {fn}")
+                        return attachment
+        
+        # Backup: Find legacy file (wireviz_harness.html)
         for attachment in part.attachments.all():
             fn = attachment.attachment.name
-            if os.path.basename(fn) == self.HARNESS_HTML_FILE:
-                return attachment.attachment.read().decode()
-    
-        return None
+
+            if fn == self.HARNESS_HTML_FILE:
+                logger.debug(f"Found legacy wireviz diagram file: {fn}")
+                return attachment
+        
+        logger.debug(f"Could not find wireviz diagram file for part {part}")
 
     def get_panel_context(self, view, request, context):
         """Return context information for the Wireviz panel."""
@@ -104,18 +119,20 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             return context
         
         if isinstance(view, PartDetail) and isinstance(part, Part):
-            # Extract any wireviz errors from the part attachments
-            for attachment in part.attachments.all():
-                fn = attachment.attachment.name
 
-                if harness_html := self.get_harness_data(part):
-                    context['wireviz_harness_html'] = harness_html
+            wireviz_metadata = part.get_metadata('wireviz')
 
-                if os.path.basename(fn) == self.ERROR_MSG_FILE:
-                    context['wireviz_errors'] = attachment.attachment.read().decode().split("\n")
+            attachment = self.get_diagram_file(part)
 
-                if os.path.basename(fn) == self.WARNING_MSG_FILE:
-                    context['wireviz_warnings'] = attachment.attachment.read().decode().split("\n")
+            if attachment:
+                context['wireviz_harness_html'] = attachment.attachment.read().decode()
+
+            if wireviz_metadata:
+                if 'warnings' in wireviz_metadata:
+                    context['wireviz_warnings'] = wireviz_metadata.get('warnings', None)
+                
+                if 'errors' in wireviz_metadata:
+                    context['wireviz_errors'] = wireviz_metadata.get('errors', None)
 
         return context
 
@@ -134,7 +151,9 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
             logger.debug(f"Checking for wireviz file for part {part}")
 
-            if self.get_harness_data(part):
+            metadata = part.get_metadata('wireviz')
+
+            if metadata:
                 panels.append({
                     'title': 'WireViz Harness',
                     'icon': 'fas fa-plug',
@@ -164,7 +183,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
                 # Check if the attachment is a .wireviz file
                 if filename.endswith(".wireviz"):
-                    self.process_wireviz_file(filename)
+                    self.process_wireviz_file(filename, part=self.part)
 
                     # Delete *old* wireviz files
                     if self.get_setting('DELETE_OLD_FILES'):
@@ -226,6 +245,8 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             from InvenTree.exceptions import log_error
             log_error("Wireviz Import")
             return
+        
+        self.remove_old_wireviz_data(part)
 
         # Extract BOM data from the harness
         self.extract_bom_data(harness)
@@ -234,11 +255,22 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             self.add_part_images(harness)
 
         self.save_bom_data()
-        self.generate_html_output(harness)
 
-        # Save any error messages to a file
-        self.save_error_file()
-        self.save_warning_file()
+        # Generate a new .html harness file
+        try:
+            harness_file = self.generate_html_output(harness)
+            harness_file = harness_file.attachment.name
+        except Exception:
+            harness_file = None
+
+        # Update the part metadata
+        wireviz_data = {
+            'diagram': harness_file,
+            'errors': self.errors,
+            'warnings': self.warnings,
+        }
+
+        part.set_metadata('wireviz', wireviz_data, overwrite=True)
 
     def prepend_wireviz_data(self):
         """Load (and prepend) any custom wireviz templates.
@@ -449,43 +481,15 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             if results.count() == 1:
                 return results.first()
     
-    def create_or_overwrite_attachment(self, fn, data, comment='Wireviz attachment'):
-        """Create a new attachment, or overwrite an existing attachment.
-        
-        - Check for an existing attachment with the same filename
-        - If it exists, overwrite the data
-        - If it does not exist, create a new attachment
-        """
+    def remove_old_wireviz_data(self, part: Part):
+        """Remove any existing wireviz data from the part."""
 
-        for attachment in self.part.attachments.all():
-            if os.path.basename(attachment.attachment.name) == fn:
-                logger.info(f"WirevizPlugin: Overwriting existing attachment {fn}")
+        attachment = self.get_diagram_file(part)
 
-                if len(data) == 0:
-                    attachment.delete()
-                    return
-
-                filename = os.path.join(settings.MEDIA_ROOT, attachment.attachment.name)
-
-                with open(filename, 'wb') as fo:
-                    fo.write(data)
-                
-                return
-
-        if len(data) == 0:
-            # Ignore empty file data
-            return
-
-        # No existing attachment found, create a new one
-        PartAttachment.objects.create(
-            part=self.part,
-            attachment=ContentFile(
-                data,
-                name=fn,
-            ),
-            comment=comment,
-            user=None
-        )
+        # If an attachment exists, delete it
+        if attachment:
+            logger.info(f"WirevizPlugin: Deleting old wireviz file: {attachment}")
+            attachment.delete()
 
     def generate_html_output(self, harness: Harness):
         """Generate HTML output from a wireviz harness."""
@@ -493,6 +497,8 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         logger.info("WirevizPlugin: Generating HTML output for wireviz harness")
 
         bomlist = bom_list(harness.bom())
+
+        self.html_file = None
 
         # For now, we must write to a tempfile
         # In the future, work out how to write to an in-memory file object
@@ -505,10 +511,15 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         with open(out_file + '.html', 'r') as f:
             html_data = f.read()
         
-        self.create_or_overwrite_attachment(
-            self.HARNESS_HTML_FILE,
-            html_data.encode(),
-            comment='Wireviz Harness (autogenerated from .wireviz file)'
+        # Create a new attachment file
+        return PartAttachment.objects.create(
+            part=self.part,
+            attachment=ContentFile(
+                html_data.encode(),
+                name=self.HARNESS_HTML_FILE,
+            ),
+            comment='Wireviz Harness (autogenerated from .wireviz file)',
+            user=None
         )
 
     def add_error(self, msg: str):
@@ -522,18 +533,6 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
         self.warnings.append(msg)
         logger.warning(f"WireViz: {msg}")
-
-    def save_error_file(self):
-        """Save an error file containing all error messages"""
-
-        data = '\n'.join(self.errors).encode()
-        self.create_or_overwrite_attachment(self.ERROR_MSG_FILE, data, comment='Wireviz error messages')
-    
-    def save_warning_file(self):
-        """Save a warning file containing all warning messages"""
-
-        data = '\n'.join(self.warnings).encode()
-        self.create_or_overwrite_attachment(self.WARNING_MSG_FILE, data, comment='Wireviz warning messages')
 
     def convert_quantity(self, quantity, unit, base_unit):
         """Convert a provided physical quantity into the "base units" of the part.
