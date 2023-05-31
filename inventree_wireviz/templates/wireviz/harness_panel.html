@@ -1,5 +1,5 @@
 {% if wireviz_errors %}
-<div class='alert alert-info alert-danger'>
+<div class='alert alert-block alert-danger'>
     <b>The following errors were encountered while processing the wireviz file:</b>
     <ul>
     {% for err in wireviz_errors %}
@@ -10,7 +10,7 @@
 {% endif %}
 
 {% if wireviz_warnings %}
-<div class='alert alert-info alert-warnings'>
+<div class='alert alert-block alert-warning'>
     <b>The following warnings were encountered while processing the wireviz file:</b>
     <ul>
     {% for warn in wireviz_warnings %}
@@ -25,7 +25,7 @@
     {{ wireviz_harness_html | safe }}
 </div>
 {% else %}
-<div class='alert alert-info alert-block'>
+<div class='alert alert-block alert-info'>
     No harness diagram available for this part.<br>
     Upload a .wireviz file to generate a harness diagram.
 </div>
