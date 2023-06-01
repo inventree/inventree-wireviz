@@ -19,6 +19,7 @@ from django.db import transaction
 from plugin import InvenTreePlugin
 from plugin.mixins import EventMixin, PanelMixin, ReportMixin, SettingsMixin
 
+from build.views import BuildDetail
 from company.models import ManufacturerPart, SupplierPart
 from InvenTree.api_version import INVENTREE_API_VERSION
 from part.models import BomItem, Part, PartAttachment
@@ -87,16 +88,26 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
         },
     }
 
+    def get_part_from_instance(self, instance):
+        """Return a Part object from the given instance."""
+
+        if not instance:
+            return None
+
+        if isinstance(instance, Part):
+            return instance
+    
+        if hasattr(instance, 'part') and isinstance(instance.part, Part):
+            return instance.part
+        
+        # No match
+        return None
+
     def add_report_context(self, report_instance, model_instance, request, context):
         """Inject wireviz data into the report context."""
 
         # Extract a Part model from the model instance
-        part = None
-
-        if isinstance(model_instance, Part):
-            part = model_instance
-        elif hasattr(model_instance, 'part') and isinstance(model_instance.part, Part):
-            part = model_instance.part
+        part = self.get_part_from_instance(model_instance)
 
         if isinstance(part, Part):
             metadata = part.get_metadata('wireviz')
@@ -104,21 +115,21 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
             if metadata:
                 if svg_file := metadata.get(self.HARNESS_SVG_KEY, None):
                     context['wireviz_svg_file'] = svg_file
-                    print("svg_file:", svg_file)
 
                 if bom_data := metadata.get(self.HARNESS_BOM_KEY, None):
                     context['wireviz_bom_data'] = bom_data
-                    print("bom_data:", bom_data)
 
     def get_panel_context(self, view, request, context):
         """Return context information for the Wireviz panel."""
 
         try:
-            part = view.get_object()
+            instance = view.get_object()
         except AttributeError:
             return context
-         
-        if isinstance(view, PartDetail) and isinstance(part, Part):
+
+        part = self.get_part_from_instance(instance)
+
+        if part and isinstance(part, Part):
 
             # Get wireviz file information from part metadata
             wireviz_metadata = part.get_metadata('wireviz')
@@ -129,8 +140,7 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
                 src_file = wireviz_metadata.get(self.HARNESS_SRC_KEY, None)
 
                 if svg_file:
-                    # Note: Use the {% uploaded_image %} template tag to render the SVG file
-                    context['wireviz_svg_file'] = svg_file
+                    context['wireviz_svg_file'] = os.path.join(settings.MEDIA_URL, svg_file)
 
                 if src_file:
                     context['wireviz_source_file'] = os.path.join(settings.MEDIA_URL, src_file)
@@ -153,21 +163,26 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
             instance = view.get_object()
         except AttributeError:
             return panels
+        
+        part = self.get_part_from_instance(instance)
+
+        # A valid part object has been found
+        if part and isinstance(part, Part):
     
-        if isinstance(view, PartDetail):
-            part = instance
+            # We are on the PartDetail or BuildDetail page
+            if isinstance(view, PartDetail) or isinstance(view, BuildDetail):
 
-            logger.debug(f"Checking for wireviz file for part {part}")
+                logger.debug(f"Checking for wireviz file for part {part}")
 
-            metadata = part.get_metadata('wireviz')
+                metadata = part.get_metadata('wireviz')
 
-            if metadata:
-                panels.append({
-                    'title': 'Harness Diagram',
-                    'icon': 'fas fa-project-diagram',
-                    'content_template': 'wireviz/harness_panel.html',
-                    'javascript_template': 'wireviz/harness_panel.js',
-                })
+                if metadata:
+                    panels.append({
+                        'title': 'Harness Diagram',
+                        'icon': 'fas fa-project-diagram',
+                        'content_template': 'wireviz/harness_panel.html',
+                        'javascript_template': 'wireviz/harness_panel.js',
+                    })
         
         return panels
 
