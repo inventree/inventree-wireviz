@@ -6,14 +6,11 @@ Provides integration of "wireviz" into the InvenTree system:
 - Extract and integrate bills of materials from wireviz diagrams
 """
 
-import csv
-import io
 import logging
 import os
 
 from wireviz.Harness import Harness
 from wireviz.wireviz import parse as parse_wireviz
-from wireviz.wv_bom import bom_list
 
 from django.conf import settings
 from django.core.files.base import ContentFile
