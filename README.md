@@ -16,7 +16,8 @@ This plugin provides server-side generation of a wiring harness diagram from a `
 
 ![](./demo/harness.svg)
 
-Refer to the [wireviz syntax guide](https://github.com/formatc1702/WireViz/blob/master/docs/syntax.md) for a full description of the file format.
+> **Note**
+> Refer to the [wireviz syntax guide](https://github.com/formatc1702/WireViz/blob/master/docs/syntax.md) for a full description of the file format.
 
 The generated harness diagram is available as a `.svg` file.
 
@@ -94,7 +95,7 @@ The generated diagram can be used in certain reports (such as the Build Order Re
 
 > **Note**
 > The provided variable refers to the *filename* of the `.svg` image - not the file itself.
-> Use the `{% uploaded_image %}` template tag to render the image file.
+> Use the `{% encode_svg_image %}` template tag to render the image file.
 
 A very simple example is shown below:
 
