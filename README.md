@@ -56,14 +56,72 @@ Once the plugin is installed, it needs to be enabled before it is available for 
 | Clear BOM Data | Remove existing BOM entries first, before creating new ones |
 | Add Part Image | Where available, embed part images in the generated harness diagram |
 
+Additionally, you must ensure that the *Enable event integration* setting is enabled in the *Plugin Settings* view:
+
+![](./docs/event_plugin.png)
+
 ## Operation
 
-### Template Files
+### Uploading Wireviz File
 
-**TODO**
-### Part Images
+To generate a wiring harness diagram for a specific Part, upload a (valid) wireviz yaml file. The file **must* have the `.wireviz` extension to be recognized by the plugin.
 
-**TODO**
+When the file is uploaded to the server, the plugin is notified and begins the process of generating the harness diagram. If successful, a `.svg` file is attached to the part instance:
+
+![](./docs/svg_file.png)
+
+### Harness Diagram Panel
+
+When a Part has a valid harness diagram (i.e. generated without any critical errors), the *Harness Diagram* panel will be available for that part. This panel displays the diagram image, and a simple Bill of Materials (as defined in the uploaded `.wireviz` file):
+
+![](./docs/harness_panel.png)
+
+> **Note**
+> You may need to reload the page before this panel is visible
+
+> **Warning**
+> Any warnings or errors which were raised during the process will be displayed here
+
+### BOM Extraction
+
+If enabled, the plugin will attempt to generate a linked Bill of Materials based on the data provided in the file. Part linking is performed based on the `pn` (part number) attribute in the wireviz BOM.
+
+For each line item in the uploaded BOM, the plugin attempts to match the `pn` field to an existing part in the InvenTree database. If a matching part is not found, this is marked with a warning in the simplified BOM table in the [harness diagram panel](#harness-diagram-panel).
+
+### Reports
+
+The generated diagram can be used in certain reports (such as the Build Order Report). If a wiring harness diagram is available for a Part, it is included in the report context as a variable named `wireviz_svg_file`.
+
+> **Note**
+> The provided variable refers to the *filename* of the `.svg` image - not the file itself.
+> Use the `{% uploaded_image %}` template tag to render the image file.
+
+A very simple example is shown below:
+
+```html
+{% extends "report/inventree_build_order_base.html" %}
+
+{% load report %}
+
+{% block page_content %}
+
+{{ block.super }}
+
+<!>
+{% if wireviz_svg_file %}
+<h4>Harness Drawing</h4>
+<div class='harness-diagram' style='width: 80%;'>
+    <img src='{% uploaded_image wireviz_svg_file %}' width='100%;'>
+</div>
+{% endif %}
+
+{% endblock page_content %}
+```
+
+The resulting report is rendered as below:
+
+
+
 ## Wireviz Documentation
 
 Documentation on the capabilities of wireviz itself:
