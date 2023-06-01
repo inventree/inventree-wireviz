@@ -30,3 +30,9 @@
     Upload a .wireviz file to generate a harness diagram.
 </div>
 {% endif %}
+
+{% if wireviz_source_file %}
+<div class='alert-alert-block alert-info'>
+    <b>Harness source file:</b> <a href='{{ wireviz_source_file }}'>{{ wireviz_source_file }}</a>
+</div> 
+{% endif %}
