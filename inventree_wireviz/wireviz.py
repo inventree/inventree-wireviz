@@ -17,8 +17,9 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 
 from plugin import InvenTreePlugin
-from plugin.mixins import EventMixin, PanelMixin, SettingsMixin
+from plugin.mixins import EventMixin, PanelMixin, ReportMixin, SettingsMixin
 
+from build.views import BuildDetail
 from company.models import ManufacturerPart, SupplierPart
 from InvenTree.api_version import INVENTREE_API_VERSION
 from part.models import BomItem, Part, PartAttachment
@@ -30,7 +31,7 @@ from .version import PLUGIN_VERSION
 logger = logging.getLogger('inventree')
 
 
-class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
+class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTreePlugin):
     """"Wireviz plugin for InvenTree
     
     - Provides a custom panel for rendering wireviz diagrams
@@ -87,34 +88,69 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         },
     }
 
+    def get_part_from_instance(self, instance):
+        """Return a Part object from the given instance."""
+
+        if not instance:
+            return None
+
+        if isinstance(instance, Part):
+            return instance
+    
+        if hasattr(instance, 'part') and isinstance(instance.part, Part):
+            return instance.part
+        
+        # No match
+        return None
+
+    def add_report_context(self, report_instance, model_instance, request, context):
+        """Inject wireviz data into the report context."""
+
+        # Extract a Part model from the model instance
+        part = self.get_part_from_instance(model_instance)
+
+        if isinstance(part, Part):
+            metadata = part.get_metadata('wireviz')
+
+            if metadata:
+                if svg_file := metadata.get(self.HARNESS_SVG_KEY, None):
+                    context['wireviz_svg_file'] = svg_file
+
+                if bom_data := metadata.get(self.HARNESS_BOM_KEY, None):
+                    context['wireviz_bom_data'] = bom_data
+
     def get_panel_context(self, view, request, context):
         """Return context information for the Wireviz panel."""
 
         try:
-            part = view.get_object()
+            instance = view.get_object()
         except AttributeError:
             return context
-        
-        if isinstance(view, PartDetail) and isinstance(part, Part):
+
+        part = self.get_part_from_instance(instance)
+
+        if part and isinstance(part, Part):
 
             # Get wireviz file information from part metadata
             wireviz_metadata = part.get_metadata('wireviz')
-            svg_file = wireviz_metadata.get(self.HARNESS_SVG_KEY, None)
-            bom_data = wireviz_metadata.get(self.HARNESS_BOM_KEY, None)
-            src_file = wireviz_metadata.get(self.HARNESS_SRC_KEY, None)
 
-            if svg_file:
-                context['wireviz_svg_file'] = os.path.join(settings.MEDIA_URL, svg_file)
+            if wireviz_metadata:
+                svg_file = wireviz_metadata.get(self.HARNESS_SVG_KEY, None)
+                bom_data = wireviz_metadata.get(self.HARNESS_BOM_KEY, None)
+                src_file = wireviz_metadata.get(self.HARNESS_SRC_KEY, None)
 
-            if src_file:
-                context['wireviz_source_file'] = os.path.join(settings.MEDIA_URL, src_file)
+                if svg_file:
+                    context['wireviz_svg_file'] = os.path.join(settings.MEDIA_URL, svg_file)
 
-            if bom_data:
-                context['wireviz_bom_data'] = bom_data
-            
-            # Add warnings and errors
-            context['wireviz_warnings'] = wireviz_metadata.get('warnings', None)
-            context['wireviz_errors'] = wireviz_metadata.get('errors', None)
+                if src_file:
+                    context['wireviz_source_file'] = os.path.join(settings.MEDIA_URL, src_file)
+
+                if bom_data:
+                    context['wireviz_bom_data'] = bom_data
+                
+                # Add warnings and errors
+                context['wireviz_warnings'] = wireviz_metadata.get('warnings', None)
+                context['wireviz_errors'] = wireviz_metadata.get('errors', None)
 
         return context
 
@@ -127,21 +163,26 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             instance = view.get_object()
         except AttributeError:
             return panels
+        
+        part = self.get_part_from_instance(instance)
+
+        # A valid part object has been found
+        if part and isinstance(part, Part):
     
-        if isinstance(view, PartDetail):
-            part = instance
+            # We are on the PartDetail or BuildDetail page
+            if isinstance(view, PartDetail) or isinstance(view, BuildDetail):
 
-            logger.debug(f"Checking for wireviz file for part {part}")
+                logger.debug(f"Checking for wireviz file for part {part}")
 
-            metadata = part.get_metadata('wireviz')
+                metadata = part.get_metadata('wireviz')
 
-            if metadata:
-                panels.append({
-                    'title': 'Harness Diagram',
-                    'icon': 'fas fa-project-diagram',
-                    'content_template': 'wireviz/harness_panel.html',
-                    'javascript_template': 'wireviz/harness_panel.js',
-                })
+                if metadata:
+                    panels.append({
+                        'title': 'Harness Diagram',
+                        'icon': 'fas fa-project-diagram',
+                        'content_template': 'wireviz/harness_panel.html',
+                        'javascript_template': 'wireviz/harness_panel.js',
+                    })
         
         return panels
 
@@ -184,6 +225,10 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         ]
 
         metadata = part.get_metadata('wireviz')
+
+        if not metadata:
+            # No metadata to check
+            return
 
         filenames = []
 
@@ -361,11 +406,16 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
             })
 
             if not sub_part:
-                self.add_warning(f"No matching part for line: {description}")
+                # No matching part can be found
                 continue
 
             if sub_part == self.part:
                 self.add_error(f"Part {sub_part} is the same as the parent part")
+                continue
+
+            # Check that it is a *valid* option for the BOM
+            if not sub_part.check_add_to_bom(self.part):
+                self.add_error(f"Part {sub_part} is not a valid option for the BOM")
                 continue
 
             # Associate the internal part with the designators
