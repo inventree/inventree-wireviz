@@ -200,6 +200,10 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
 
         metadata = part.get_metadata('wireviz')
 
+        if not metadata:
+            # No metadata to check
+            return
+
         filenames = []
 
         for key in file_keys:
