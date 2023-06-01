@@ -17,7 +17,7 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 
 from plugin import InvenTreePlugin
-from plugin.mixins import EventMixin, PanelMixin, SettingsMixin
+from plugin.mixins import EventMixin, PanelMixin, ReportMixin, SettingsMixin
 
 from company.models import ManufacturerPart, SupplierPart
 from InvenTree.api_version import INVENTREE_API_VERSION
@@ -30,7 +30,7 @@ from .version import PLUGIN_VERSION
 logger = logging.getLogger('inventree')
 
 
-class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
+class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTreePlugin):
     """"Wireviz plugin for InvenTree
     
     - Provides a custom panel for rendering wireviz diagrams
@@ -87,6 +87,19 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         },
     }
 
+    def add_report_context(self, report_instance, model_instance, request, context):
+        """Inject wireviz data into the report context."""
+
+        if isinstance(model_instance, Part):
+            metadata = model_instance.get_metadata('wireviz')
+
+            if metadata:
+                if svg_file := metadata.get(self.HARNESS_SVG_KEY, None):
+                    context['wireviz_svg_file'] = os.path.join(settings.MEDIA_URL, svg_file)
+
+                if bom_data := metadata.get(self.HARNESS_BOM_KEY, None):
+                    context['wireviz_bom_data'] = bom_data
+
     def get_panel_context(self, view, request, context):
         """Return context information for the Wireviz panel."""
 
@@ -99,22 +112,24 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
             # Get wireviz file information from part metadata
             wireviz_metadata = part.get_metadata('wireviz')
-            svg_file = wireviz_metadata.get(self.HARNESS_SVG_KEY, None)
-            bom_data = wireviz_metadata.get(self.HARNESS_BOM_KEY, None)
-            src_file = wireviz_metadata.get(self.HARNESS_SRC_KEY, None)
 
-            if svg_file:
-                context['wireviz_svg_file'] = os.path.join(settings.MEDIA_URL, svg_file)
+            if wireviz_metadata:
+                svg_file = wireviz_metadata.get(self.HARNESS_SVG_KEY, None)
+                bom_data = wireviz_metadata.get(self.HARNESS_BOM_KEY, None)
+                src_file = wireviz_metadata.get(self.HARNESS_SRC_KEY, None)
 
-            if src_file:
-                context['wireviz_source_file'] = os.path.join(settings.MEDIA_URL, src_file)
+                if svg_file:
+                    context['wireviz_svg_file'] = os.path.join(settings.MEDIA_URL, svg_file)
 
-            if bom_data:
-                context['wireviz_bom_data'] = bom_data
-            
-            # Add warnings and errors
-            context['wireviz_warnings'] = wireviz_metadata.get('warnings', None)
-            context['wireviz_errors'] = wireviz_metadata.get('errors', None)
+                if src_file:
+                    context['wireviz_source_file'] = os.path.join(settings.MEDIA_URL, src_file)
+
+                if bom_data:
+                    context['wireviz_bom_data'] = bom_data
+                
+                # Add warnings and errors
+                context['wireviz_warnings'] = wireviz_metadata.get('warnings', None)
+                context['wireviz_errors'] = wireviz_metadata.get('errors', None)
 
         return context
 
