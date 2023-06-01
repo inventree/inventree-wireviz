@@ -90,15 +90,25 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
     def add_report_context(self, report_instance, model_instance, request, context):
         """Inject wireviz data into the report context."""
 
+        # Extract a Part model from the model instance
+        part = None
+
         if isinstance(model_instance, Part):
-            metadata = model_instance.get_metadata('wireviz')
+            part = model_instance
+        elif hasattr(model_instance, 'part') and isinstance(model_instance.part, Part):
+            part = model_instance.part
+
+        if isinstance(part, Part):
+            metadata = part.get_metadata('wireviz')
 
             if metadata:
                 if svg_file := metadata.get(self.HARNESS_SVG_KEY, None):
-                    context['wireviz_svg_file'] = os.path.join(settings.MEDIA_URL, svg_file)
+                    context['wireviz_svg_file'] = svg_file
+                    print("svg_file:", svg_file)
 
                 if bom_data := metadata.get(self.HARNESS_BOM_KEY, None):
                     context['wireviz_bom_data'] = bom_data
+                    print("bom_data:", bom_data)
 
     def get_panel_context(self, view, request, context):
         """Return context information for the Wireviz panel."""
@@ -107,7 +117,7 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
             part = view.get_object()
         except AttributeError:
             return context
-        
+         
         if isinstance(view, PartDetail) and isinstance(part, Part):
 
             # Get wireviz file information from part metadata
@@ -119,7 +129,8 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
                 src_file = wireviz_metadata.get(self.HARNESS_SRC_KEY, None)
 
                 if svg_file:
-                    context['wireviz_svg_file'] = os.path.join(settings.MEDIA_URL, svg_file)
+                    # Note: Use the {% uploaded_image %} template tag to render the SVG file
+                    context['wireviz_svg_file'] = svg_file
 
                 if src_file:
                     context['wireviz_source_file'] = os.path.join(settings.MEDIA_URL, src_file)
