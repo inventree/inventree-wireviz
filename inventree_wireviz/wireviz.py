@@ -99,7 +99,7 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
                     if fn == filename or os.path.basename(fn) == filename:
                         logger.debug(f"Found wireviz diagram file: {fn}")
                         return attachment
-        
+                    
         # Backup: Find legacy file (wireviz_harness.html)
         for attachment in part.attachments.all():
             fn = attachment.attachment.name
@@ -109,6 +109,14 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
                 return attachment
         
         logger.debug(f"Could not find wireviz diagram file for part {part}")
+
+    def get_source_file(self, part: Part):
+        """Return the source file for the wireviz diagram"""
+            
+        metadata = part.get_metadata('wireviz')
+
+        if metadata and 'source_file' in metadata:
+            return metadata['source_file']
 
     def get_panel_context(self, view, request, context):
         """Return context information for the Wireviz panel."""
@@ -122,7 +130,11 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
             wireviz_metadata = part.get_metadata('wireviz')
 
+            source = self.get_source_file(part)
             attachment = self.get_diagram_file(part)
+
+            if source:
+                context['wireviz_source_file'] = source
 
             if attachment:
                 context['wireviz_harness_html'] = attachment.attachment.read().decode()
@@ -155,8 +167,8 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
 
             if metadata:
                 panels.append({
-                    'title': 'WireViz Harness',
-                    'icon': 'fas fa-plug',
+                    'title': 'Harness Diagram',
+                    'icon': 'fas fa-project-diagram',
                     'content_template': 'wireviz/harness_panel.html',
                     'javascript_template': 'wireviz/harness_panel.js',
                 })
@@ -262,11 +274,14 @@ class WirevizPlugin(EventMixin, PanelMixin, SettingsMixin, InvenTreePlugin):
         try:
             harness_file = self.generate_html_output(harness, wz_filename)
             harness_file = harness_file.attachment.name
-        except Exception:
+        except Exception as exc:
+            self.add_error(f"Failed to generate HTML output for wireviz file: {wv_file}")
+            self.add_error(f"Exception: {exc}")
             harness_file = None
 
         # Update the part metadata
         wireviz_data = {
+            'source_file': wv_file,
             'diagram': harness_file,
             'errors': self.errors,
             'warnings': self.warnings,
