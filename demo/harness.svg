@@ -1,0 +1,176 @@
+
+
+
+
+<svg width="881pt" height="314pt" viewBox="0.00 0.00 881.00 314.00" xmlns="http://www.w3.org/2000/svg">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 310)">
+<title>%3</title>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-310 877,-310 877,4 -4,4"></polygon>
+
+<g id="node1" class="node">
+<title>X1</title>
+<polygon fill="#ffffff" stroke="black" points="152,-276 0,-276 0,0 152,0 152,-276"></polygon>
+<polygon fill="none" stroke="black" points="0,-253 0,-276 152,-276 152,-253 0,-253"></polygon>
+<text text-anchor="start" x="66.5" y="-260.8" font-family="arial" font-size="14.00">X1</text>
+<polygon fill="none" stroke="black" points="0,-230 0,-253 152,-253 152,-230 0,-230"></polygon>
+<text text-anchor="start" x="32.5" y="-237.8" font-family="arial" font-size="14.00">P/N: DSUB&#45;9</text>
+<polygon fill="none" stroke="black" points="0,-207 0,-230 51,-230 51,-207 0,-207"></polygon>
+<text text-anchor="start" x="4" y="-214.8" font-family="arial" font-size="14.00">D&#45;Sub</text>
+<polygon fill="none" stroke="black" points="51,-207 51,-230 107,-230 107,-207 51,-207"></polygon>
+<text text-anchor="start" x="55" y="-214.8" font-family="arial" font-size="14.00">female</text>
+<polygon fill="none" stroke="black" points="107,-207 107,-230 152,-230 152,-207 107,-207"></polygon>
+<text text-anchor="start" x="111" y="-214.8" font-family="arial" font-size="14.00">9&#45;pin</text>
+<polygon fill="none" stroke="black" points="0,-184 0,-207 87,-207 87,-184 0,-184"></polygon>
+<text text-anchor="start" x="28" y="-191.8" font-family="arial" font-size="14.00">DCD</text>
+<polygon fill="none" stroke="black" points="87,-184 87,-207 152,-207 152,-184 87,-184"></polygon>
+<text text-anchor="start" x="114.5" y="-191.8" font-family="arial" font-size="14.00">1</text>
+<polygon fill="none" stroke="black" points="0,-161 0,-184 87,-184 87,-161 0,-161"></polygon>
+<text text-anchor="start" x="33.5" y="-168.8" font-family="arial" font-size="14.00">RX</text>
+<polygon fill="none" stroke="black" points="87,-161 87,-184 152,-184 152,-161 87,-161"></polygon>
+<text text-anchor="start" x="114.5" y="-168.8" font-family="arial" font-size="14.00">2</text>
+<polygon fill="none" stroke="black" points="0,-138 0,-161 87,-161 87,-138 0,-138"></polygon>
+<text text-anchor="start" x="34" y="-145.8" font-family="arial" font-size="14.00">TX</text>
+<polygon fill="none" stroke="black" points="87,-138 87,-161 152,-161 152,-138 87,-138"></polygon>
+<text text-anchor="start" x="114.5" y="-145.8" font-family="arial" font-size="14.00">3</text>
+<polygon fill="none" stroke="black" points="0,-115 0,-138 87,-138 87,-115 0,-115"></polygon>
+<text text-anchor="start" x="29" y="-122.8" font-family="arial" font-size="14.00">DTR</text>
+<polygon fill="none" stroke="black" points="87,-115 87,-138 152,-138 152,-115 87,-115"></polygon>
+<text text-anchor="start" x="114.5" y="-122.8" font-family="arial" font-size="14.00">4</text>
+<polygon fill="none" stroke="black" points="0,-92 0,-115 87,-115 87,-92 0,-92"></polygon>
+<text text-anchor="start" x="27.5" y="-99.8" font-family="arial" font-size="14.00">GND</text>
+<polygon fill="none" stroke="black" points="87,-92 87,-115 152,-115 152,-92 87,-92"></polygon>
+<text text-anchor="start" x="114.5" y="-99.8" font-family="arial" font-size="14.00">5</text>
+<polygon fill="none" stroke="black" points="0,-69 0,-92 87,-92 87,-69 0,-69"></polygon>
+<text text-anchor="start" x="28.5" y="-76.8" font-family="arial" font-size="14.00">DSR</text>
+<polygon fill="none" stroke="black" points="87,-69 87,-92 152,-92 152,-69 87,-69"></polygon>
+<text text-anchor="start" x="114.5" y="-76.8" font-family="arial" font-size="14.00">6</text>
+<polygon fill="none" stroke="black" points="0,-46 0,-69 87,-69 87,-46 0,-46"></polygon>
+<text text-anchor="start" x="30" y="-53.8" font-family="arial" font-size="14.00">RTS</text>
+<polygon fill="none" stroke="black" points="87,-46 87,-69 152,-69 152,-46 87,-46"></polygon>
+<text text-anchor="start" x="114.5" y="-53.8" font-family="arial" font-size="14.00">7</text>
+<polygon fill="none" stroke="black" points="0,-23 0,-46 87,-46 87,-23 0,-23"></polygon>
+<text text-anchor="start" x="29.5" y="-30.8" font-family="arial" font-size="14.00">CTS</text>
+<polygon fill="none" stroke="black" points="87,-23 87,-46 152,-46 152,-23 87,-23"></polygon>
+<text text-anchor="start" x="114.5" y="-30.8" font-family="arial" font-size="14.00">8</text>
+<polygon fill="none" stroke="black" points="0,0 0,-23 87,-23 87,0 0,0"></polygon>
+<text text-anchor="start" x="36" y="-7.8" font-family="arial" font-size="14.00">RI</text>
+<polygon fill="none" stroke="black" points="87,0 87,-23 152,-23 152,0 87,0"></polygon>
+<text text-anchor="start" x="114.5" y="-7.8" font-family="arial" font-size="14.00">9</text>
+</g>
+
+<g id="node3" class="node">
+<title>W1</title>
+<polygon fill="#ffffff" stroke="black" points="525,-306 296,-306 296,-84 525,-84 525,-306"></polygon>
+<polygon fill="none" stroke="black" points="296.5,-283 296.5,-306 525.5,-306 525.5,-283 296.5,-283"></polygon>
+<text text-anchor="start" x="399.5" y="-290.8" font-family="arial" font-size="14.00">W1</text>
+<polygon fill="none" stroke="black" points="296.5,-260 296.5,-283 525.5,-283 525.5,-260 296.5,-260"></polygon>
+<text text-anchor="start" x="338.5" y="-267.8" font-family="arial" font-size="14.00">P/N: WIRE&#45;SHIELDED</text>
+<polygon fill="none" stroke="black" points="296.5,-237 296.5,-260 333.5,-260 333.5,-237 296.5,-237"></polygon>
+<text text-anchor="start" x="306" y="-244.8" font-family="arial" font-size="14.00">3x</text>
+<polygon fill="none" stroke="black" points="333.5,-237 333.5,-260 421.5,-260 421.5,-237 333.5,-237"></polygon>
+<text text-anchor="start" x="343" y="-244.8" font-family="arial" font-size="14.00">0.25 mm²</text>
+<polygon fill="none" stroke="black" points="421.5,-237 421.5,-260 466.5,-260 466.5,-237 421.5,-237"></polygon>
+<text text-anchor="start" x="431" y="-244.8" font-family="arial" font-size="14.00">+ S</text>
+<polygon fill="none" stroke="black" points="466.5,-237 466.5,-260 525.5,-260 525.5,-237 466.5,-237"></polygon>
+<text text-anchor="start" x="475.5" y="-244.8" font-family="arial" font-size="14.00">0.2 m</text>
+<text text-anchor="start" x="330.5" y="-223.8" font-family="arial" font-size="14.00"> </text>
+<text text-anchor="start" x="298.5" y="-204.8" font-family="arial" font-size="14.00">X1:5:GND</text>
+<text text-anchor="start" x="371.5" y="-204.8" font-family="arial" font-size="14.00"> &#160;&#160;&#160;&#160;1:WH &#160;&#160;&#160;</text>
+<text text-anchor="start" x="454.5" y="-204.8" font-family="arial" font-size="14.00">X2:1:GND</text>
+<polygon fill="#000000" stroke="transparent" points="296.5,-197 296.5,-199 525.5,-199 525.5,-197 296.5,-197"></polygon>
+<polygon fill="#ffffff" stroke="transparent" points="296.5,-195 296.5,-197 525.5,-197 525.5,-195 296.5,-195"></polygon>
+<polygon fill="#000000" stroke="transparent" points="296.5,-193 296.5,-195 525.5,-195 525.5,-193 296.5,-193"></polygon>
+<text text-anchor="start" x="304.5" y="-179.8" font-family="arial" font-size="14.00">X1:2:RX</text>
+<text text-anchor="start" x="373.5" y="-179.8" font-family="arial" font-size="14.00"> &#160;&#160;&#160;&#160;2:BN &#160;&#160;&#160;</text>
+<text text-anchor="start" x="461.5" y="-179.8" font-family="arial" font-size="14.00">X2:3:TX</text>
+<polygon fill="#000000" stroke="transparent" points="296.5,-172 296.5,-174 525.5,-174 525.5,-172 296.5,-172"></polygon>
+<polygon fill="#895956" stroke="transparent" points="296.5,-170 296.5,-172 525.5,-172 525.5,-170 296.5,-170"></polygon>
+<polygon fill="#000000" stroke="transparent" points="296.5,-168 296.5,-170 525.5,-170 525.5,-168 296.5,-168"></polygon>
+<text text-anchor="start" x="305.5" y="-154.8" font-family="arial" font-size="14.00">X1:3:TX</text>
+<text text-anchor="start" x="373" y="-154.8" font-family="arial" font-size="14.00"> &#160;&#160;&#160;&#160;3:GN &#160;&#160;&#160;</text>
+<text text-anchor="start" x="460.5" y="-154.8" font-family="arial" font-size="14.00">X2:2:RX</text>
+<polygon fill="#000000" stroke="transparent" points="296.5,-147 296.5,-149 525.5,-149 525.5,-147 296.5,-147"></polygon>
+<polygon fill="#00ff00" stroke="transparent" points="296.5,-145 296.5,-147 525.5,-147 525.5,-145 296.5,-145"></polygon>
+<polygon fill="#000000" stroke="transparent" points="296.5,-143 296.5,-145 525.5,-145 525.5,-143 296.5,-143"></polygon>
+<text text-anchor="start" x="330.5" y="-129.8" font-family="arial" font-size="14.00"> </text>
+<text text-anchor="start" x="298.5" y="-110.8" font-family="arial" font-size="14.00">X1:5:GND</text>
+<text text-anchor="start" x="389.5" y="-110.8" font-family="arial" font-size="14.00">Shield</text>
+<polygon fill="#000000" stroke="transparent" points="296.5,-103 296.5,-105 525.5,-105 525.5,-103 296.5,-103"></polygon>
+<text text-anchor="start" x="330.5" y="-89.8" font-family="arial" font-size="14.00"> </text>
+</g>
+
+<g id="edge1" class="edge">
+<title>X1:e&#45;&#45;W1:w</title>
+<path fill="none" stroke="#000000" stroke-width="2" d="M152,-101C230.18,-103.18 221.81,-196.18 296,-194"></path>
+<path fill="none" stroke="#ffffff" stroke-width="2" d="M152,-103C228.19,-103 219.81,-196 296,-196"></path>
+<path fill="none" stroke="#000000" stroke-width="2" d="M152,-105C226.19,-102.82 217.82,-195.82 296,-198"></path>
+</g>
+
+<g id="edge3" class="edge">
+<title>X1:e&#45;&#45;W1:w</title>
+<path fill="none" stroke="#000000" stroke-width="2" d="M152,-171C215.76,-171.02 231.75,-169.02 296,-169"></path>
+<path fill="none" stroke="#895956" stroke-width="2" d="M152,-173C216.01,-173 231.99,-171 296,-171"></path>
+<path fill="none" stroke="#000000" stroke-width="2" d="M152,-175C216.25,-174.98 232.24,-172.98 296,-173"></path>
+</g>
+
+<g id="edge5" class="edge">
+<title>X1:e&#45;&#45;W1:w</title>
+<path fill="none" stroke="#000000" stroke-width="2" d="M152,-148C215.54,-148.06 231.49,-144.06 296,-144"></path>
+<path fill="none" stroke="#00ff00" stroke-width="2" d="M152,-150C216.02,-150 231.98,-146 296,-146"></path>
+<path fill="none" stroke="#000000" stroke-width="2" d="M152,-152C216.51,-151.94 232.46,-147.94 296,-148"></path>
+</g>
+
+<g id="edge7" class="edge">
+<title>X1:e&#45;&#45;W1:w</title>
+<path fill="none" stroke="#000000" stroke-width="2" d="M152,-103C216,-103 232,-104 296,-104"></path>
+</g>
+
+<g id="node2" class="node">
+<title>X2</title>
+<polygon fill="#ffffff" stroke="black" points="873,-277 669,-277 669,-139 873,-139 873,-277"></polygon>
+<polygon fill="none" stroke="black" points="669,-254 669,-277 873,-277 873,-254 669,-254"></polygon>
+<text text-anchor="start" x="761.5" y="-261.8" font-family="arial" font-size="14.00">X2</text>
+<polygon fill="none" stroke="black" points="669,-231 669,-254 873,-254 873,-231 669,-231"></polygon>
+<text text-anchor="start" x="730" y="-238.8" font-family="arial" font-size="14.00">P/N: KK&#45;254</text>
+<polygon fill="none" stroke="black" points="669,-208 669,-231 772,-231 772,-208 669,-208"></polygon>
+<text text-anchor="start" x="673" y="-215.8" font-family="arial" font-size="14.00">Molex KK 254</text>
+<polygon fill="none" stroke="black" points="772,-208 772,-231 828,-231 828,-208 772,-208"></polygon>
+<text text-anchor="start" x="776" y="-215.8" font-family="arial" font-size="14.00">female</text>
+<polygon fill="none" stroke="black" points="828,-208 828,-231 873,-231 873,-208 828,-208"></polygon>
+<text text-anchor="start" x="832" y="-215.8" font-family="arial" font-size="14.00">3&#45;pin</text>
+<polygon fill="none" stroke="black" points="669,-185 669,-208 760,-208 760,-185 669,-185"></polygon>
+<text text-anchor="start" x="709.5" y="-192.8" font-family="arial" font-size="14.00">1</text>
+<polygon fill="none" stroke="black" points="760,-185 760,-208 873,-208 873,-185 760,-185"></polygon>
+<text text-anchor="start" x="800.5" y="-192.8" font-family="arial" font-size="14.00">GND</text>
+<polygon fill="none" stroke="black" points="669,-162 669,-185 760,-185 760,-162 669,-162"></polygon>
+<text text-anchor="start" x="709.5" y="-169.8" font-family="arial" font-size="14.00">2</text>
+<polygon fill="none" stroke="black" points="760,-162 760,-185 873,-185 873,-162 760,-162"></polygon>
+<text text-anchor="start" x="806.5" y="-169.8" font-family="arial" font-size="14.00">RX</text>
+<polygon fill="none" stroke="black" points="669,-139 669,-162 760,-162 760,-139 669,-139"></polygon>
+<text text-anchor="start" x="709.5" y="-146.8" font-family="arial" font-size="14.00">3</text>
+<polygon fill="none" stroke="black" points="760,-139 760,-162 873,-162 873,-139 760,-139"></polygon>
+<text text-anchor="start" x="807" y="-146.8" font-family="arial" font-size="14.00">TX</text>
+</g>
+
+<g id="edge2" class="edge">
+<title>W1:e&#45;&#45;X2:w</title>
+<path fill="none" stroke="#000000" stroke-width="2" d="M525,-194C589,-194 605,-194 669,-194"></path>
+<path fill="none" stroke="#ffffff" stroke-width="2" d="M525,-196C589,-196 605,-196 669,-196"></path>
+<path fill="none" stroke="#000000" stroke-width="2" d="M525,-198C589,-198 605,-198 669,-198"></path>
+</g>
+
+<g id="edge4" class="edge">
+<title>W1:e&#45;&#45;X2:w</title>
+<path fill="none" stroke="#000000" stroke-width="2" d="M525,-169C588.04,-169.86 602.68,-148.86 669,-148"></path>
+<path fill="none" stroke="#895956" stroke-width="2" d="M525,-171C589.68,-171 604.32,-150 669,-150"></path>
+<path fill="none" stroke="#000000" stroke-width="2" d="M525,-173C591.32,-172.14 605.96,-151.14 669,-152"></path>
+</g>
+
+<g id="edge6" class="edge">
+<title>W1:e&#45;&#45;X2:w</title>
+<path fill="none" stroke="#000000" stroke-width="2" d="M525,-144C591.9,-145.09 605.67,-172.09 669,-171"></path>
+<path fill="none" stroke="#00ff00" stroke-width="2" d="M525,-146C590.12,-146 603.88,-173 669,-173"></path>
+<path fill="none" stroke="#000000" stroke-width="2" d="M525,-148C588.33,-146.91 602.1,-173.91 669,-175"></path>
+</g>
+</g>
+</svg>
