@@ -103,16 +103,25 @@ A very simple example is shown below:
 
 {% load report %}
 
+{% block style %}
+{{ block.super }}
+
+.harness {
+    border: 1px solid #AAA; 
+    width: 100%;
+    display: inline-block;
+}
+
+{% endblock %}
+
 {% block page_content %}
 
 {{ block.super }}
 
-<!>
 {% if wireviz_svg_file %}
-<h4>Harness Drawing</h4>
-<div class='harness-diagram' style='width: 80%;'>
-    <img src='{% uploaded_image wireviz_svg_file %}' width='100%;'>
-</div>
+
+    <h4>Harness Drawing</h4>
+    <img class='harness' src='{% encode_svg_image wireviz_svg_file %}'>
 {% endif %}
 
 {% endblock page_content %}
@@ -120,7 +129,7 @@ A very simple example is shown below:
 
 The resulting report is rendered as below:
 
-
+![](./docs/report.png)
 
 ## Wireviz Documentation
 
