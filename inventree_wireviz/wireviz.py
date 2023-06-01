@@ -380,11 +380,16 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
             })
 
             if not sub_part:
-                self.add_warning(f"No matching part for line: {description}")
+                # No matching part can be found
                 continue
 
             if sub_part == self.part:
                 self.add_error(f"Part {sub_part} is the same as the parent part")
+                continue
+
+            # Check that it is a *valid* option for the BOM
+            if not sub_part.check_add_to_bom(self.part):
+                self.add_error(f"Part {sub_part} is not a valid option for the BOM")
                 continue
 
             # Associate the internal part with the designators
