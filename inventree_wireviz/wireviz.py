@@ -430,13 +430,15 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
                 continue
 
             # Construct a new BomItem object
-            self.bom_items.append(BomItem(
-                part=self.part,
-                sub_part=sub_part,
-                quantity=quantity,
-                reference=' '.join(designators),
-                note="Wireviz BOM item"
-            ))
+            # Prevent zero-quantity BOM Items
+            if quantity > 0:
+                self.bom_items.append(BomItem(
+                    part=self.part,
+                    sub_part=sub_part,
+                    quantity=quantity,
+                    reference=' '.join(designators),
+                    note="Wireviz BOM item"
+                ))
         
         # Write BOM data to database
         self.save_bom_data()
