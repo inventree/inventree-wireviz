@@ -114,7 +114,11 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
 
             if metadata:
                 if svg_file := metadata.get(self.HARNESS_SVG_KEY, None):
-                    context['wireviz_svg_file'] = svg_file
+                    svg_path = os.path.join(settings.MEDIA_ROOT, svg_file)
+                    
+                    # Ensure that the file really does exist
+                    if os.path.exists(svg_path):
+                        context['wireviz_svg_file'] = svg_file
 
                 if bom_data := metadata.get(self.HARNESS_BOM_KEY, None):
                     context['wireviz_bom_data'] = bom_data
