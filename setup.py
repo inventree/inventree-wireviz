@@ -17,7 +17,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     keywords="inventree inventory wireviz wiring cable harness",
-    url="https://github.com/inventree/inventree-wireviz-plugin",
+    url="https://github.com/inventree/inventree-wireviz",
     license="MIT",
     packages=setuptools.find_packages(),
     include_package_data=True,
