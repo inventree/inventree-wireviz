@@ -12,9 +12,11 @@ import os
 from wireviz.Harness import Harness
 from wireviz.wireviz import parse as parse_wireviz
 
+
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
+from django.template.loader import render_to_string
 from django.urls import path
 
 from plugin import InvenTreePlugin
@@ -604,5 +606,22 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, UrlsMixi
         from . import views
 
         return [
-            path('upload/', views.UploadWirevizView.as_view(), name='wireviz-upload'),
+            path('upload/', views.UploadWirevizView.as_view(), name='wireviz-file-upload'),
         ]
+
+    def get_settings_content(self, request):
+        """Custom settings content for the wireviz plugin page."""
+
+        try:
+            return render_to_string('wireviz/settings_panel.html', context={'plugin': self}, request=request)
+        except Exception as exp:
+            return f"""
+                <div class='panel-heading'>
+                    <h4>Template Error</h4>
+                </div>
+                <div class='panel-content'>
+                    <div class='alert alert-warning alert-block'>
+                    {str(exp)}
+                    </div>
+                </div>
+                """
