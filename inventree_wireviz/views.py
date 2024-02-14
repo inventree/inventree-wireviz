@@ -4,7 +4,7 @@ from rest_framework import permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .serializers import DeleteTemplateSerializer, WirevizDeleteSerializer, WirevizUploadSerializer
+from .serializers import DeleteTemplateSerializer, UploadTemplateSerializer, WirevizDeleteSerializer, WirevizUploadSerializer
 
 
 class UploadWirevizView(APIView):
@@ -32,6 +32,22 @@ class DeleteWirevizView(APIView):
         """Handle POST request for deleting a wireviz file."""
 
         serializer = WirevizDeleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save()
+
+        return Response(serializer.data, status=201)
+
+
+class UploadTemplateView(APIView):
+    """View for uploading a wireviz template file."""
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST request."""
+
+        serializer = UploadTemplateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         serializer.save()

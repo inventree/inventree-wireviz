@@ -58,6 +58,27 @@
         );
     }
 
+    function uploadWirevizTemplate() {
+
+        const url = "/plugin/wireviz/upload-template/";
+
+        let fields = {
+            'template': {
+                required: true,
+                label: 'Template File',
+                type: 'file upload',
+                help_text: 'Select a Wireviz template file to upload',
+            }
+        };
+
+        constructCreateForm(fields, {
+            url: url,
+            method: 'POST',
+            fields: fields,
+            title: 'Upload WireViz Template'
+        });
+    }
+
 
     function deleteWirevizTemplate(templateName) {
 
