@@ -73,3 +73,8 @@
 {% if wireviz_source_file %}
 <a href='{{ wireviz_source_file }}'>Source file</a>
 {% endif %}
+<hr>
+<div>
+    {% include "wireviz/upload_script.html" %}
+    <button class='btn btn-primary' onclick='uploadWireviz({{ part.pk }})' id='upload_button' >Upload new WireViz file</button>
+</div>

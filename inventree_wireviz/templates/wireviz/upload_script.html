@@ -1,0 +1,37 @@
+<script>
+
+    function uploadWireviz(partId) {
+    
+        // Hook into the modal form framework
+        const url = "/plugin/wireviz/upload/";
+
+        let fields = {
+            'part': {
+                label: 'Part',
+                help_text: 'Select an internal part to associate with the Wireviz file',
+                type: 'related field',
+                api_url: '{% url "api-part-list" %}',
+                model: 'part',
+                required: true,
+                filters: {
+                    assembly: true,
+                },
+                value: partId,
+            },
+            'file': {
+                required: true,
+                label: 'Wireviz File',
+                type: 'file upload',
+                help_text: 'Select a Wireviz file to upload',
+            }
+        }
+
+        constructCreateForm(fields, {
+            url: url,
+            method: 'POST',
+            fields: fields,
+            title: 'Upload Wireviz File',
+        });
+    }
+
+</script>

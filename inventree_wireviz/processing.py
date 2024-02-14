@@ -74,21 +74,51 @@ class WirevizImportManager:
 
         return harness
 
+    def cleanup_old_files(self, part: Part):
+        """Remove old files from an existing Part instance."""
+
+        metadata = part.get_metadata('wireviz')
+
+        if not metadata:
+            return
+        
+        file_keys = [
+            'source_file',
+            'svg_file',
+        ]
+
+        filenames = []
+
+        for key in file_keys:
+            if key in metadata:
+                filenames.append(metadata[key])
+
+        for attachment in part.attachments.all():
+            fn = attachment.attachment.name
+
+            if fn in filenames or os.path.basename(fn) in filenames:
+                logger.info("WireViz: Deleting old file '%s'", fn)
+                attachment.delete()
+
     def import_harness(self, wv_file, part: Part, user):
         """Import a wireviz file into the specified part."""
         
         logger.info("Importing wireviz harness file")
 
+        # Determine runtime settings
+        delete_old_files = str2bool(self.plugin.get_setting('DELETE_OLD_FILES'))
+        save_bom_data = str2bool(self.plugin.get_setting('EXTRACT_BOM'))
+        clear_bom_data = str2bool(self.plugin.get_setting('CLEAR_BOM_DATA'))
+
         self.part = part
+
+        if delete_old_files:
+            self.cleanup_old_files(part)
 
         # Extract harness information
         harness = self.parse_wireviz_file(wv_file.file)
 
         self.extract_bom_data(harness)
-
-        # Save to database?
-        save_bom_data = str2bool(self.plugin.get_setting('EXTRACT_BOM'))
-        clear_bom_data = str2bool(self.plugin.get_setting('CLEAR_BOM_DATA'))
 
         if save_bom_data:
             if clear_bom_data:

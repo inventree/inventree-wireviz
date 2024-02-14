@@ -1,7 +1,6 @@
 """DRF serializers for the wireviz plugin."""
 
 
-from rest_framework.exceptions import ValidationError
 from rest_framework import serializers
 
 from part.models import Part
