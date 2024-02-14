@@ -17,7 +17,7 @@ from plugin import InvenTreePlugin
 from plugin.mixins import PanelMixin, ReportMixin, SettingsMixin, UrlsMixin
 
 from build.views import BuildDetail
-from part.models import Part
+from part.models import Part, PartCategory
 from part.views import PartDetail
 
 from .version import PLUGIN_VERSION
@@ -52,6 +52,11 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
     HARNESS_BOM_KEY = "bom_data"
 
     SETTINGS = {
+        "HARNESS_CATEGORY": {
+            'name': 'Wire Harness Category',
+            'description': 'Select the part category for wire harnesses',
+            'model': 'part.partcategory', 
+        },
         "WIREVIZ_PATH": {
             'name': 'Wireviz Upload Path',
             'description': 'Path to store uploaded wireviz template files (relative to media root)',
@@ -169,7 +174,9 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
 
         # A valid part object has been found
         if part and isinstance(part, Part):
-    
+
+            add_panel = False
+
             # We are on the PartDetail or BuildDetail page
             if isinstance(view, PartDetail) or isinstance(view, BuildDetail):
 
@@ -178,12 +185,28 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
                 metadata = part.get_metadata('wireviz')
 
                 if metadata:
-                    panels.append({
-                        'title': 'Harness Diagram',
-                        'icon': 'fas fa-project-diagram',
-                        'content_template': 'wireviz/harness_panel.html',
-                        'javascript_template': 'wireviz/harness_panel.js',
-                    })
+                    add_panel = True
+
+            if not add_panel and isinstance(view, PartDetail):
+                # Check if the Part belongs to the harness category
+                if harness_category := self.get_setting('HARNESS_CATEGORY'):
+                    try:
+                        category = PartCategory.objects.get(pk=harness_category)
+                        children = category.get_descendants(include_self=True)
+
+                        if part.category in children:
+                            add_panel = True
+
+                    except (PartCategory.DoesNotExist, ValueError):
+                        pass
+
+            if add_panel:
+                panels.append({
+                    'title': 'Harness Diagram',
+                    'icon': 'fas fa-project-diagram',
+                    'content_template': 'wireviz/harness_panel.html',
+                    'javascript_template': 'wireviz/harness_panel.js',
+                })
         
         return panels
 
