@@ -33,3 +33,14 @@ class WirevizUploadSerializer(serializers.Serializer):
         mgr.parse_wireviz_file(file.file)
 
         return file
+
+    def save(self, user=None, **kwargs):
+        """Save the validated serializer."""
+
+        data = self.validated_data
+
+        wv_file = data['file']
+        part = data['part']
+
+        mgr = WirevizImportManager()
+        mgr.import_harness(wv_file, part, user)

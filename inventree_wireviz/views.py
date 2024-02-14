@@ -19,7 +19,7 @@ class UploadWirevizView(APIView):
         serializer = WirevizUploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        print("HERE WE GO")
+        serializer.save(user=request.user)
 
         return Response(serializer.data, status=201)
 
