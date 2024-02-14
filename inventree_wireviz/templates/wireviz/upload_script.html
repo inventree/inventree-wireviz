@@ -34,4 +34,28 @@
         });
     }
 
+    function deleteWireviz(partId) {
+
+        showQuestionDialog(
+            "Delete Wireviz File",
+            "Are you sure you want to delete the Wireviz file?",
+            {
+                accept: function() {
+                    inventreePut(
+                        `/plugin/wireviz/delete/`,
+                        {
+                            part: partId,
+                        },
+                        {
+                            method: 'POST',
+                            success: function() {
+                                location.reload();
+                            },
+                        }
+                    )
+                }
+            }
+        );
+    }
+
 </script>

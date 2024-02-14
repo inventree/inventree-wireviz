@@ -8,6 +8,26 @@ from part.models import Part
 from .processing import WirevizImportManager
 
 
+class WirevizDeleteSerializer(serializers.Serializer):
+    """Serializer for deleting a wireviz file."""
+
+    part = serializers.PrimaryKeyRelatedField(
+        queryset=Part.objects.all(),
+        many=False,
+        required=True, allow_null=False,
+        label="Part",
+        help_text="Select part"
+    )
+
+    def save(self, **kwargs):
+        """Remove wireviz harness from the specified part."""
+
+
+        part = self.validated_data['part']
+        print("Deleting wireviz for:", part)
+        part.set_metadata('wireviz', None)
+
+
 class WirevizUploadSerializer(serializers.Serializer):
     """Serializer for uploading a wireviz file"""
 
