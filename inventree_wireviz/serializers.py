@@ -13,7 +13,6 @@ from plugin.registry import registry
 from .processing import WirevizImportManager
 
 
-
 def template_path(template):
     """Return the fully qualified template path from a template string."""
 

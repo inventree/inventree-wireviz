@@ -55,7 +55,7 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
         "HARNESS_CATEGORY": {
             'name': 'Wire Harness Category',
             'description': 'Select the part category for wire harnesses',
-            'model': 'part.partcategory', 
+            'model': 'part.partcategory',
         },
         "WIREVIZ_PATH": {
             'name': 'Wireviz Upload Path',

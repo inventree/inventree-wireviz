@@ -304,12 +304,12 @@ class WirevizImportManager:
     def add_error(self, msg: str):
         """Add an error message."""
         self.errors.append(msg)
-        logger.error(f"WireViz:", msg)
+        logger.error(f"WireViz: {msg}")
     
     def add_warning(self, msg: str):
         """Add a warning message."""
         self.warnings.append(msg)
-        logger.warning(f"WireViz:", msg)
+        logger.warning(f"WireViz: {msg}")
 
     def match_part(self, line: dict):
         """Attempt to match a BOM line item to an InvenTree part.
