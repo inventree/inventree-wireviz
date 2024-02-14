@@ -213,6 +213,7 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
         return [
             path('upload/', views.UploadWirevizView.as_view(), name='wireviz-file-upload'),
             path('delete/', views.DeleteWirevizView.as_view(), name='wireviz-file-delete'),
+            path('delete-template/', views.DeleteTemplateView.as_view(), name='wireviz-delete-template'),
         ]
 
     def get_settings_content(self, request):

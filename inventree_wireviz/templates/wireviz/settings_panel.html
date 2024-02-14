@@ -25,12 +25,14 @@
         <thead>
             <tr>
                 <th>Template</th>
+                <th></th>
             </tr>
         </tr>
         <tbody>
             {% for template in templates %}
             <tr>
-                <td>{{ template }}</td>
+                <td><a href="/media/{{ template }}">{{ template }}</a></td>
+                <td><button class='btn btn-danger' onclick='deleteWirevizTemplate("{{ template }}")'>Delete</button></td>
             </tr>
             {% endfor %}
         </tbody>

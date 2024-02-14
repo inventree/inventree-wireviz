@@ -58,4 +58,29 @@
         );
     }
 
+
+    function deleteWirevizTemplate(templateName) {
+
+        showQuestionDialog(
+            "Delete Wireviz Template",
+            "Are you sure you want to delete the Wireviz template?",
+            {
+                accept: function() {
+                    inventreePut(
+                        `/plugin/wireviz/delete-template/`,
+                        {
+                            template: templateName,
+                        },
+                        {
+                            method: 'POST',
+                            success: function() {
+                                location.reload();
+                            },
+                        }
+                    )
+                }
+            }
+        );
+    }
+
 </script>

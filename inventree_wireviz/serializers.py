@@ -1,11 +1,33 @@
 """DRF serializers for the wireviz plugin."""
 
+import os
 
+from django.conf import settings
 from rest_framework import serializers
 
 from part.models import Part
+from plugin.registry import registry
 
 from .processing import WirevizImportManager
+
+
+
+def template_path(template):
+    """Return the fully qualified template path from a template string."""
+
+    plugin = registry.get_plugin('wireviz')
+
+    if not plugin:
+        return None
+    
+    subdir = plugin.get_setting('WIREVIZ_PATH')
+
+    if not subdir:
+        return None
+    
+    template = os.path.basename(template)
+
+    return os.path.abspath(os.path.join(settings.MEDIA_ROOT, subdir, template))
 
 
 class WirevizDeleteSerializer(serializers.Serializer):
@@ -22,9 +44,7 @@ class WirevizDeleteSerializer(serializers.Serializer):
     def save(self, **kwargs):
         """Remove wireviz harness from the specified part."""
 
-
         part = self.validated_data['part']
-        print("Deleting wireviz for:", part)
         part.set_metadata('wireviz', None)
 
 
@@ -63,3 +83,36 @@ class WirevizUploadSerializer(serializers.Serializer):
 
         mgr = WirevizImportManager()
         mgr.import_harness(wv_file, part, user)
+
+
+class DeleteTemplateSerializer(serializers.Serializer):
+    """Serializer for deleting a wireviz template file."""
+
+    template = serializers.CharField(
+        label="Template file name",
+        help_text="Select wireviz template file",
+        required=True, allow_blank=False
+    )
+
+    def validate_template(self, template):
+        """Ensure that the specified wireviz template file exists."""
+        
+        path = template_path(template)
+
+        if not path:
+            raise serializers.ValidationError("Invalid wireviz template file")
+
+        if not os.path.exists(path):
+            raise serializers.ValidationError("Wireviz template file does not exist")
+
+        return template
+
+    def save(self, **kwargs):
+        """Delete the specified wireviz template file."""
+        
+        template = self.validated_data['template']
+
+        path = template_path(template)
+
+        if os.path.exists(path) and os.path.isfile(path):
+            os.remove(path)
