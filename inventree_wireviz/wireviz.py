@@ -187,35 +187,23 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
         
         return panels
 
-    def prepend_wireviz_data(self):
-        """Load (and prepend) any custom wireviz templates.
-        
-        - Any '.wireviz' files found in the WIREVIZ_PATH directory will be loaded
-        - The contents of these files will be prepended to the wireviz data
-        """
+    def get_template_files(self):
+        """Return a list of existing WireViz template files which have been uploaded."""
 
-        prepend_data = ''
-
+        templates = []
         subdir = self.get_setting('WIREVIZ_PATH')
-
-        logger.info(f"WirevizPlugin: Prepending wireviz data from {subdir}")
 
         if subdir:
             path = os.path.join(settings.MEDIA_ROOT, subdir)
             path = os.path.abspath(path)
 
             if os.path.exists(path):
-                for filename in os.listdir(path):
-                    if filename.lower().endswith('.wireviz'):
-                        filepath = os.path.join(path, filename)
+                for f in os.listdir(path):
+                    if f.endswith('.wireviz'):
+                        template = os.path.join(subdir, f)
+                        templates.append(template)
 
-                        logger.info(f"WirevizPlugin: Loading wireviz template file: {filepath}")
-
-                        with open(filepath, 'r') as f:
-                            prepend_data += f.read()
-                            prepend_data += '\n\n'
-
-        return prepend_data
+        return templates
 
     def setup_urls(self):
         """Setup URL patterns for the wireviz plugin."""
@@ -229,8 +217,13 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
     def get_settings_content(self, request):
         """Custom settings content for the wireviz plugin page."""
 
+        ctx = {
+            'plugin': self,
+            'templates': self.get_template_files(),
+        }
+
         try:
-            return render_to_string('wireviz/settings_panel.html', context={'plugin': self}, request=request)
+            return render_to_string('wireviz/settings_panel.html', context=ctx, request=request)
         except Exception as exp:
             return f"""
                 <div class='panel-heading'>

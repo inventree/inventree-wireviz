@@ -2,7 +2,9 @@
 
 import logging
 import os
+import yaml
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from rest_framework.exceptions import ValidationError
 
@@ -50,6 +52,31 @@ class WirevizImportManager:
         self.warnings = []
         self.part_map = {}
 
+    def prepend_templates(self):
+        """Prepend the contents of the wireviz template files to the wireviz file."""
+
+        prepend_data = ''
+
+        for template in self.plugin.get_template_files():
+            tf = os.path.abspath(os.path.join(settings.MEDIA_ROOT, template))
+            print(template, '->', tf)
+
+            with open(tf, 'r') as f:
+
+                template_data = f.read()
+
+                try:
+                    yaml.safe_load(template_data)
+                except Exception as exc:
+                    self.add_error(f"Invalid YAML data in template file '{template}'")
+                    self.add_error(f"YAML parsing error: {exc}")
+                    continue
+
+                prepend_data += template_data
+                prepend_data += '\n\n'
+
+        return prepend_data
+
     def parse_wireviz_file(self, wv_file) -> Harness:
         """Process the provided wireviz file.
 
@@ -59,10 +86,22 @@ class WirevizImportManager:
             ValidationError: If the file is invalid (for some reason)
         """
         
-        # TODO: Prepend data from other files
-
         wv_file.seek(0)
         wv_data = wv_file.read().decode('utf-8')
+
+        try:
+            yaml.safe_load(wv_data)
+        except Exception as exc:
+            raise ValidationError([
+                {str(exc)},
+                "Not a valid YAML file",
+            ])
+
+        # Prepend data from existing templates
+        wv_data = self.prepend_templates() + wv_data
+
+        print("Wireviz data:")
+        print(wv_data)
 
         try:
             harness = parse_wireviz(wv_data, return_types='harness')
