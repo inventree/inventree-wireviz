@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from part.models import Part
 
-from .processing import parse_wireviz_file
+from .processing import WirevizImportManager
 
 
 class WirevizUploadSerializer(serializers.Serializer):
@@ -29,19 +29,7 @@ class WirevizUploadSerializer(serializers.Serializer):
     def validate_file(self, file):
         """Validate the uploaded wireviz file."""
 
-        # Run an initial pass of the file to test if it is valid
-        parse_wireviz_file(file.file)
+        mgr = WirevizImportManager()
+        mgr.parse_wireviz_file(file.file)
 
         return file
-
-    def validate(self, data):
-        """Ensure that the uploaded file is a valid wireviz file"""
-
-        data = super().validate(data)
-
-        file = data.get("file")
-
-        if file is None:
-            raise ValidationError("No file provided")
-
-        return data

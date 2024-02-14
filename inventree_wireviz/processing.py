@@ -3,6 +3,8 @@
 
 from rest_framework.exceptions import ValidationError
 
+from plugin.registry import registry
+
 from wireviz.Harness import Harness
 from wireviz.wireviz import parse as parse_wireviz
 
@@ -22,24 +24,37 @@ def get_unit_registry():
     return pint.UnitRegistry()
 
 
-def parse_wireviz_file(wv_file, prepend_files=None) -> Harness:
-    """Process the provided wireviz file.
+class WirevizImportManager:
+    """Class for managing a wireviz file import session."""
 
-    Returns a wireviz Harness object (if the file is valid)
-     
-    Raises:
-        ValidationError: If the file is invalid (for some reason)
-    """
-    
-    wv_data = wv_file.read().decode('utf-8')
+    def __init__(self):
+        """Initialize the WirevizImportManager."""
+        
+        # Grab a reference to the wireviz plugin
+        self.plugin = registry.get_plugin('wireviz')
 
-    # TODO: prepend data from other files
+        # Get the unit registry
+        self.ureg = get_unit_registry()
 
-    # Try to parse the wireviz file
-    try:
-        harness = parse_wireviz(
-            wv_data,
-            return_types='harness'
-        )
-    except Exception as exc:
-        raise ValidationError(f"Failed to parse wireviz file: {str(exc)}")
+    def parse_wireviz_file(self, wv_file) -> Harness:
+        """Process the provided wireviz file.
+
+        Returns a wireviz Harness object (if the file is valid)
+        
+        Raises:
+            ValidationError: If the file is invalid (for some reason)
+        """
+        
+        # TODO: Prepend data from other files
+
+        wv_data = wv_file.read().decode('utf-8')
+
+        try:
+            harness = parse_wireviz(wv_data, return_types='harness')
+        except Exception as exc:
+            raise ValidationError([
+                {str(exc)},
+                "Failed to parse wireviz file:",
+            ])
+
+        return harness
