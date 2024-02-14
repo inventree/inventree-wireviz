@@ -15,9 +15,10 @@ from wireviz.wireviz import parse as parse_wireviz
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
+from django.urls import path
 
 from plugin import InvenTreePlugin
-from plugin.mixins import EventMixin, PanelMixin, ReportMixin, SettingsMixin
+from plugin.mixins import EventMixin, PanelMixin, ReportMixin, SettingsMixin, UrlsMixin
 
 from build.views import BuildDetail
 from company.models import ManufacturerPart, SupplierPart
@@ -31,7 +32,7 @@ from .version import PLUGIN_VERSION
 logger = logging.getLogger('inventree')
 
 
-class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTreePlugin):
+class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTreePlugin):
     """"Wireviz plugin for InvenTree
     
     - Provides a custom panel for rendering wireviz diagrams
@@ -596,3 +597,12 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
         except Exception:
             self.add_error(f"Could not convert quantity {quantity} {unit} to {base_unit}")
             return quantity
+
+    def setup_urls(self):
+        """Setup URL patterns for the wireviz plugin."""
+
+        from . import views
+
+        return [
+            path('upload/', views.UploadWirevizView.as_view(), name='wireviz-upload'),
+        ]
