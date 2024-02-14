@@ -9,20 +9,15 @@ Provides integration of "wireviz" into the InvenTree system:
 import logging
 import os
 
-from wireviz.Harness import Harness
-from wireviz.wireviz import parse as parse_wireviz
-
 from django.conf import settings
-from django.core.files.base import ContentFile
-from django.db import transaction
+from django.template.loader import render_to_string
+from django.urls import path
 
 from plugin import InvenTreePlugin
-from plugin.mixins import EventMixin, PanelMixin, ReportMixin, SettingsMixin
+from plugin.mixins import PanelMixin, ReportMixin, SettingsMixin, UrlsMixin
 
 from build.views import BuildDetail
-from company.models import ManufacturerPart, SupplierPart
-from InvenTree.api_version import INVENTREE_API_VERSION
-from part.models import BomItem, Part, PartAttachment
+from part.models import Part, PartCategory
 from part.views import PartDetail
 
 from .version import PLUGIN_VERSION
@@ -31,7 +26,7 @@ from .version import PLUGIN_VERSION
 logger = logging.getLogger('inventree')
 
 
-class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTreePlugin):
+class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTreePlugin):
     """"Wireviz plugin for InvenTree
     
     - Provides a custom panel for rendering wireviz diagrams
@@ -57,6 +52,11 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
     HARNESS_BOM_KEY = "bom_data"
 
     SETTINGS = {
+        "HARNESS_CATEGORY": {
+            'name': 'Wire Harness Category',
+            'description': 'Select the part category for wire harnesses',
+            'model': 'part.partcategory',
+        },
         "WIREVIZ_PATH": {
             'name': 'Wireviz Upload Path',
             'description': 'Path to store uploaded wireviz template files (relative to media root)',
@@ -135,6 +135,8 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
 
         if part and isinstance(part, Part):
 
+            context['part'] = part
+
             # Get wireviz file information from part metadata
             wireviz_metadata = part.get_metadata('wireviz')
 
@@ -172,7 +174,9 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
 
         # A valid part object has been found
         if part and isinstance(part, Part):
-    
+
+            add_panel = False
+
             # We are on the PartDetail or BuildDetail page
             if isinstance(view, PartDetail) or isinstance(view, BuildDetail):
 
@@ -181,418 +185,79 @@ class WirevizPlugin(EventMixin, PanelMixin, ReportMixin, SettingsMixin, InvenTre
                 metadata = part.get_metadata('wireviz')
 
                 if metadata:
-                    panels.append({
-                        'title': 'Harness Diagram',
-                        'icon': 'fas fa-project-diagram',
-                        'content_template': 'wireviz/harness_panel.html',
-                        'javascript_template': 'wireviz/harness_panel.js',
-                    })
+                    add_panel = True
+
+            if not add_panel and isinstance(view, PartDetail):
+                # Check if the Part belongs to the harness category
+                if harness_category := self.get_setting('HARNESS_CATEGORY'):
+                    try:
+                        category = PartCategory.objects.get(pk=harness_category)
+                        children = category.get_descendants(include_self=True)
+
+                        if part.category in children:
+                            add_panel = True
+
+                    except (PartCategory.DoesNotExist, ValueError):
+                        pass
+
+            if add_panel:
+                panels.append({
+                    'title': 'Harness Diagram',
+                    'icon': 'fas fa-project-diagram',
+                    'content_template': 'wireviz/harness_panel.html',
+                    'javascript_template': 'wireviz/harness_panel.js',
+                })
         
         return panels
 
-    def process_event(self, event, *args, **kwargs):
-        """Callback for event processing.
-        
-        We are interested in the following events:
-        - part_partattachment.created
-        """
+    def get_template_files(self):
+        """Return a list of existing WireViz template files which have been uploaded."""
 
-        # Callback for when a new PartAttachment is created
-        if event == 'part_partattachment.created':
-            pk = kwargs.get('id', None)
-
-            try:
-                attachment = PartAttachment.objects.get(pk=pk)
-                filename = attachment.attachment.name
-
-                # Store a reference to the parent Part
-                self.part = attachment.part
-
-                # Check if the attachment is a .wireviz file
-                if filename.endswith(".wireviz"):
-                    self.cleanup_old_files(filename, self.part)
-                    self.process_wireviz_file(filename, part=self.part)
-
-            except PartAttachment.DoesNotExist:
-                pass
-    
-    def cleanup_old_files(self, filename: str, part: Part):
-        """Remove any old wireviz files from the part."""
-
-        if not self.get_setting('DELETE_OLD_FILES'):
-            # Don't delete old files
-            return
-        
-        file_keys = [
-            self.HARNESS_SRC_KEY,
-            self.HARNESS_SVG_KEY,
-        ]
-
-        metadata = part.get_metadata('wireviz')
-
-        if not metadata:
-            # No metadata to check
-            return
-
-        filenames = []
-
-        for key in file_keys:
-            if key in metadata:
-                filenames.append(metadata[key])
-
-        for attachment in part.attachments.all():
-            fn = attachment.attachment.name
-
-            if fn == filename or os.path.basename(fn) == filename:
-                # Don't delete the newly uploaded file!
-                continue
-
-            if fn in filenames or os.path.basename(fn) in filenames:
-                logger.info(f"Deleting old wireviz file: {fn}")
-                attachment.delete()
-
-    def process_wireviz_file(self, wv_file: str, part: Part = None):
-        """Process a wireviz file, and extract the relevant information."""
-
-        logger.info(f"WirevizPlugin: Processing wireviz file: {wv_file}")
-
-        # Get a unit registry for conversion
-        if INVENTREE_API_VERSION >= 117:
-            # Modern InvenTree versions supply a unit registry
-            from InvenTree.conversion import get_unit_registry
-            self.ureg = get_unit_registry()
-        else:
-            # Fallback to pint unit registry
-            import pint
-            self.ureg = pint.UnitRegistry()
-
-        self.errors = []
-        self.warnings = []
-        self.part_map = {}
-
-        # Parse the wireviz file
-        filename = os.path.join(settings.MEDIA_ROOT, wv_file)
-
-        if not os.path.exists(filename):
-            self.add_error(f"File does not exist: {filename}")
-            return
-        
-        with open(filename, 'r') as f:
-            wireviz_data = f.read()
-
-        if prepend := self.prepend_wireviz_data():
-            wireviz_data = prepend + wireviz_data
-
-        # Parse the wireviz data
-        try:
-            harness = parse_wireviz(
-                wireviz_data,
-                return_types='harness',
-            )
-        except Exception as exc:
-            logger.error(f"WirevizPlugin: Failed to parse wireviz file: {exc}")
-
-            from InvenTree.exceptions import log_error
-            log_error("Wireviz Import")
-            return
-        
-        # Extract BOM data from the harness
-        self.extract_bom_data(harness)
-
-        if self.get_setting("ADD_IMAGES"):
-            self.add_part_images(harness)
-
-        wz_filename = os.path.basename(wv_file)
-
-        # Generate SVG output
-
-        try:
-            svg_file = self.generate_svg_output(harness, wz_filename)
-            svg_file = svg_file.attachment.name
-        except Exception as exc:
-            self.add_error(f"Failed to generate SVG output for wireviz file: {wv_file}")
-            self.add_error(f"Exception: {exc}")
-            svg_file = None
-
-        # Update the part metadata
-        wireviz_data = {
-            self.HARNESS_SRC_KEY: wv_file,
-            self.HARNESS_SVG_KEY: svg_file,
-            self.HARNESS_BOM_KEY: self.bom_lines,
-            'errors': self.errors,
-            'warnings': self.warnings,
-        }
-
-        part.set_metadata('wireviz', wireviz_data, overwrite=True)
-
-    def prepend_wireviz_data(self):
-        """Load (and prepend) any custom wireviz templates.
-        
-        - Any '.wireviz' files found in the WIREVIZ_PATH directory will be loaded
-        - The contents of these files will be prepended to the wireviz data
-        """
-
-        prepend_data = ''
-
+        templates = []
         subdir = self.get_setting('WIREVIZ_PATH')
-
-        logger.info(f"WirevizPlugin: Prepending wireviz data from {subdir}")
 
         if subdir:
             path = os.path.join(settings.MEDIA_ROOT, subdir)
             path = os.path.abspath(path)
 
             if os.path.exists(path):
-                for filename in os.listdir(path):
-                    if filename.lower().endswith('.wireviz'):
-                        filepath = os.path.join(path, filename)
+                for f in os.listdir(path):
+                    if f.endswith('.wireviz'):
+                        template = os.path.join(subdir, f)
+                        templates.append(template)
 
-                        logger.info(f"WirevizPlugin: Loading wireviz template file: {filepath}")
+        return templates
 
-                        with open(filepath, 'r') as f:
-                            prepend_data += f.read()
-                            prepend_data += '\n\n'
+    def setup_urls(self):
+        """Setup URL patterns for the wireviz plugin."""
 
-        return prepend_data
+        from . import views
 
-    def add_part_images(self, harness: Harness):
-        """Add part images to the wireviz harness"""
-        
-        logger.warning("WirevizPlugin: Adding part images is not yet supported")
-        
-        # TODO: Implement native image support
-                
-    @transaction.atomic
-    def extract_bom_data(self, harness: Harness):
-        """Extract Bill of Materials data from a wireviz harness.
-        
-        Arguments:
-            harness: A wireviz Harness instance
-        """
-        logger.info("WirevizPlugin: Extracting BOM data from wireviz harness")
+        return [
+            path('upload/', views.UploadWirevizView.as_view(), name='wireviz-file-upload'),
+            path('delete/', views.DeleteWirevizView.as_view(), name='wireviz-file-delete'),
+            path('upload-template/', views.UploadTemplateView.as_view(), name='wireviz-upload-template'),
+            path('delete-template/', views.DeleteTemplateView.as_view(), name='wireviz-delete-template'),
+        ]
 
-        bom = harness.bom()
+    def get_settings_content(self, request):
+        """Custom settings content for the wireviz plugin page."""
 
-        # A list of BomItem objects to be created
-        self.bom_items = []
-
-        # A list of BOM lines to be exported to csv
-        self.bom_lines = []
-
-        for line in bom:
-            designators = line.get('designators', [])
-            description = line.get('description', None)
-            pn = line.get('pn', None)
-            mpn = line.get('mpn', None)
-            spn = line.get('spn', None)
-            quantity = line.get('qty', None)
-            unit = line.get('unit', None)
-
-            try:
-                quantity = float(quantity)
-            except (TypeError, ValueError):
-                self.add_error(f"Invalid quantity for line: {line}")
-                continue
-
-            sub_part = self.match_part(line)
-
-            # Add line to internally stored BOM data
-            self.bom_lines.append({
-                'idx': len(self.bom_lines) + 1,
-                'description': description,
-                'designators': ', '.join(designators),
-                'quantity': quantity,
-                'unit': unit,
-                'sub_part': sub_part.pk if sub_part else None,
-                'pn': pn,
-                'mpn': mpn,
-                'spn': spn,
-            })
-
-            if not sub_part:
-                # No matching part can be found
-                continue
-
-            if sub_part == self.part:
-                self.add_error(f"Part {sub_part} is the same as the parent part")
-                continue
-
-            # Check that it is a *valid* option for the BOM
-            if not sub_part.check_add_to_bom(self.part):
-                self.add_error(f"Part {sub_part} is not a valid option for the BOM")
-                continue
-
-            # Associate the internal part with the designators
-            for designator in designators:
-                self.part_map[designator] = sub_part
-
-            if unit or sub_part.units:
-                quantity = self.convert_quantity(quantity, unit, sub_part.units)
-
-            if not description:
-                self.add_error(f"No description for line: {line}")
-                continue
-
-            # Construct a new BomItem object
-            # Prevent zero-quantity BOM Items
-            if quantity > 0:
-                self.bom_items.append(BomItem(
-                    part=self.part,
-                    sub_part=sub_part,
-                    quantity=quantity,
-                    reference=' '.join(designators),
-                    note="Wireviz BOM item"
-                ))
-        
-        # Write BOM data to database
-        self.save_bom_data()
-
-    def save_bom_data(self):
-        """Write the extracted BOM data to the database."""
-
-        if not self.get_setting('EXTRACT_BOM'):
-            return
-        
-        if len(self.errors) > 0:
-            self.add_warning("Not saving BOM data due to errors")
-            return
-
-        if self.get_setting('CLEAR_BOM_DATA'):
-            logger.info(f"WirevizPlugin: Clearing existing BOM data for part {self.part}")
-            self.part.bom_items.all().delete()
-        
-        # Create the new BomItem objects in the database
-        BomItem.objects.bulk_create(self.bom_items)
-
-    def match_part(self, line: dict):
-        """Attempt to match a BOM line item to an InvenTree part.
-        
-        Arguments:
-            line: A dictionary of BOM line item data
-        
-        Returns:
-            A Part instance, or None
-        """
-
-        # Extract data from BOM entry
-        pn = line.get('pn', None)
-        description = line.get('description', None)
-        mpn = line.get('mpn', None)
-        spn = line.get('spn', None)
-
-        # Match pn -> part.IPN
-        if pn:
-            results = Part.objects.filter(IPN=pn)
-            if results.count() == 1:
-                return results.first()
-
-            # Match pn -> part.name
-            results = Part.objects.filter(name=pn)
-            if results.count() == 1:
-                return results.first()
-
-        # Match description -> part.description
-        if description:
-            results = Part.objects.filter(description=description)
-            if results.count() == 1:
-                return results.first()
-
-        # Match mpn -> manufacturer_part.MPN
-        if mpn:
-            results = ManufacturerPart.objects.filter(MPN=mpn)
-            if results.count() == 1:
-                return results.first().part
-        
-        # Match spn -> supplier_part.SKU
-        if spn:
-            results = SupplierPart.objects.filter(SKU=spn)
-            if results.count() == 1:
-                return results.first().part
-
-        # For a 'wire', append the wire color and try again
-        if pn and description and description.startswith('Wire, '):
-            wire_data = [x.strip() for x in description.split(',')]
-
-            """
-            For individual wires, the PN does not include the color.
-            For example, a wire might have a PN "26AWG-PTFE"
-            To fully quality the wire, we need to append the color.
-            So, we might get a value like "26AWG-PTFE-YE" for a yellow wire.
-            """
-
-            if len(wire_data) >= 3:
-                color = wire_data[2]
-            
-            wire_pn = f"{pn}-{color}"
-
-            # Match wire_pn -> part.IPN
-            results = Part.objects.filter(IPN=wire_pn)
-            if results.count() == 1:
-                return results.first()
-        
-            # Match wire_pn -> part.name
-            results = Part.objects.filter(name=wire_pn)
-            if results.count() == 1:
-                return results.first()
-
-    def generate_svg_output(self, harness: Harness, filename: str):
-        """Generate SVG output from a wireviz harness."""
-
-        logger.info("WirevizPlugin: Generating SVG output for wireviz harness")
-
-        graph = harness.create_graph()
-        svg_data = graph.pipe(format='svg')
-
-        return PartAttachment.objects.create(
-            part=self.part,
-            attachment=ContentFile(
-                svg_data.decode('utf-8'),
-                name='wireviz_harness.svg',
-            ),
-            comment=f"Wireviz Harness (autogenerated from {filename})",
-            user=None
-        )
-
-    def add_error(self, msg: str):
-        """Add an error message to the list of errors."""
-
-        self.errors.append(msg)
-        logger.error(f"WireViz: {msg}")
-
-    def add_warning(self, msg: str):
-        """Add a warning message to the list of errors."""
-
-        self.warnings.append(msg)
-        logger.warning(f"WireViz: {msg}")
-
-    def convert_quantity(self, quantity, unit, base_unit):
-        """Convert a provided physical quantity into the "base units" of the part.
-        
-        Args:
-            quantity: The quantity to convert
-            unit: The unit of the quantity
-            base_unit: The base unit of the part
-        
-        Returns:
-            The converted quantity, or the original quantity if conversion failed
-        """
-
-        # Ignore unit if quantity not given
-        # Will be specified in the part units anyway
-        if not unit:
-            return quantity
-
-        logger.debug(f"WirevizPlugin: Converting quantity {quantity} {unit} to {base_unit}")
-
-        q = f"{quantity} {unit}"
+        ctx = {
+            'plugin': self,
+            'templates': self.get_template_files(),
+        }
 
         try:
-            val = self.ureg.Quantity(q)
-
-            if base_unit:
-                val = val.to(base_unit)
-
-            return float(val.magnitude)
-        except Exception:
-            self.add_error(f"Could not convert quantity {quantity} {unit} to {base_unit}")
-            return quantity
+            return render_to_string('wireviz/settings_panel.html', context=ctx, request=request)
+        except Exception as exp:
+            return f"""
+                <div class='panel-heading'>
+                    <h4>Template Error</h4>
+                </div>
+                <div class='panel-content'>
+                    <div class='alert alert-warning alert-block'>
+                    {str(exp)}
+                    </div>
+                </div>
+                """

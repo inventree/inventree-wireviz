@@ -1,0 +1,43 @@
+{% load inventree_extras %}
+{% load static %}
+
+{% include "wireviz/upload_script.html" %}
+
+
+<div class='panel-heading'>
+    <h4>Upload Wireviz File</h4>
+</div>
+<div class='panel-content'>
+
+    <div>Upload a new WireViz file using the form below</div>
+
+    <button class='btn btn-primary' onclick='uploadWireviz()'>Upload Wireviz Diagram</button>
+</div>
+
+<div class='panel-heading'>
+    <h4>WireViz Templates</h4>
+</div>
+<div class='panel-content'>
+    <b>Custom WireViz template files can be uploaded to the server</b>
+
+    {% if templates %}
+    <table class='table table-striped table-condensed'>
+        <thead>
+            <tr>
+                <th>Template</th>
+                <th></th>
+            </tr>
+        </tr>
+        <tbody>
+            {% for template in templates %}
+            <tr>
+                <td><a href="/media/{{ template }}">{{ template }}</a></td>
+                <td><button class='btn btn-danger' onclick='deleteWirevizTemplate("{{ template }}")'>Delete</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <button class='btn btn-primary' onclick='uploadWirevizTemplate()'>Upload Template File</button>
+</div>

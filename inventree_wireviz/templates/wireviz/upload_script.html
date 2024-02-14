@@ -1,0 +1,107 @@
+<script>
+
+    function uploadWireviz(partId) {
+    
+        // Hook into the modal form framework
+        const url = "/plugin/wireviz/upload/";
+
+        let fields = {
+            'part': {
+                label: 'Part',
+                help_text: 'Select an internal part to associate with the Wireviz file',
+                type: 'related field',
+                api_url: '{% url "api-part-list" %}',
+                model: 'part',
+                required: true,
+                filters: {
+                    assembly: true,
+                },
+                value: partId,
+            },
+            'file': {
+                required: true,
+                label: 'Wireviz File',
+                type: 'file upload',
+                help_text: 'Select a Wireviz file to upload',
+            }
+        }
+
+        constructCreateForm(fields, {
+            url: url,
+            method: 'POST',
+            fields: fields,
+            title: 'Upload Wireviz File',
+        });
+    }
+
+    function deleteWireviz(partId) {
+
+        showQuestionDialog(
+            "Delete Wireviz File",
+            "Are you sure you want to delete the Wireviz file?",
+            {
+                accept: function() {
+                    inventreePut(
+                        `/plugin/wireviz/delete/`,
+                        {
+                            part: partId,
+                        },
+                        {
+                            method: 'POST',
+                            success: function() {
+                                location.reload();
+                            },
+                        }
+                    )
+                }
+            }
+        );
+    }
+
+    function uploadWirevizTemplate() {
+
+        const url = "/plugin/wireviz/upload-template/";
+
+        let fields = {
+            'template': {
+                required: true,
+                label: 'Template File',
+                type: 'file upload',
+                help_text: 'Select a Wireviz template file to upload',
+            }
+        };
+
+        constructCreateForm(fields, {
+            url: url,
+            method: 'POST',
+            fields: fields,
+            title: 'Upload WireViz Template'
+        });
+    }
+
+
+    function deleteWirevizTemplate(templateName) {
+
+        showQuestionDialog(
+            "Delete Wireviz Template",
+            "Are you sure you want to delete the Wireviz template?",
+            {
+                accept: function() {
+                    inventreePut(
+                        `/plugin/wireviz/delete-template/`,
+                        {
+                            template: templateName,
+                        },
+                        {
+                            method: 'POST',
+                            success: function() {
+                                location.reload();
+                            },
+                        }
+                    )
+                }
+            }
+        );
+    }
+
+</script>
