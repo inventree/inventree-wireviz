@@ -59,7 +59,6 @@ class WirevizImportManager:
 
         for template in self.plugin.get_template_files():
             tf = os.path.abspath(os.path.join(settings.MEDIA_ROOT, template))
-            print(template, '->', tf)
 
             with open(tf, 'r') as f:
 
@@ -99,9 +98,6 @@ class WirevizImportManager:
 
         # Prepend data from existing templates
         wv_data = self.prepend_templates() + wv_data
-
-        print("Wireviz data:")
-        print(wv_data)
 
         try:
             harness = parse_wireviz(wv_data, return_types='harness')
