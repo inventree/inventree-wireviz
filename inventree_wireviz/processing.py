@@ -90,7 +90,6 @@ class WirevizImportManager:
         # Attachment not created
         return None
 
-
     def prepend_templates(self):
         """Prepend the contents of the wireviz template files to the wireviz file."""
 
