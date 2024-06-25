@@ -69,7 +69,7 @@ class WirevizImportManager:
                 model_id=part.pk,
                 attachment=attachment,
                 comment=comment,
-                user=user
+                upload_user=user
             )
         except Exception:
             pass
@@ -88,7 +88,7 @@ class WirevizImportManager:
             pass
 
         # Attachment not created
-        return None
+        raise ValidationError("Error creating attachment file")
 
     def prepend_templates(self):
         """Prepend the contents of the wireviz template files to the wireviz file."""
