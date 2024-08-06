@@ -407,16 +407,19 @@ class WirevizImportManager:
 
             if len(wire_data) >= 3:
                 color = wire_data[2]
-            
-            wire_pn = f"{pn}-{color}"
+                wire_pn = f"{pn}-{color}"
+            else:
+                wire_pn = pn
 
             # Match wire_pn -> part.IPN
             results = Part.objects.filter(IPN=wire_pn)
+
             if results.count() == 1:
                 return results.first()
         
             # Match wire_pn -> part.name
             results = Part.objects.filter(name=wire_pn)
+
             if results.count() == 1:
                 return results.first()
     
