@@ -101,3 +101,6 @@ celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
+
+# Compiled static files (copied from frontend/dist/static as part of setup.py)
+inventree_wireviz/static
