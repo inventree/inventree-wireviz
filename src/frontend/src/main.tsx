@@ -1,4 +1,3 @@
-import './index.css'
 import { renderPanel } from './WirevizPanel.tsx'
 
 /**
