@@ -11,14 +11,14 @@ with open('README.md', encoding='utf-8') as f:
 
 # Copy the compiled frontend files into the 'static' directory
 # Required for MANIFEST.in to work correctly
-# src_dir = pathlib.Path('frontend/dist/static')
-# dst_dir = pathlib.Path('inventree_wireviz/static')
+src_dir = pathlib.Path('frontend/dist/static')
+dst_dir = pathlib.Path('inventree_wireviz/static')
 
-# # Clean out the destination directory
-# if dst_dir.exists():
-#     shutil.rmtree(dst_dir)
+# Clean out the destination directory
+if dst_dir.exists():
+    shutil.rmtree(dst_dir)
 
-# shutil.copytree(src_dir, dst_dir)
+shutil.copytree(src_dir, dst_dir)
 
 setuptools.setup(
     name="inventree-wireviz-plugin",
