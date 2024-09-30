@@ -14,11 +14,8 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: "18"
-      - name: Install Deps
-        run: |
-          cd frontend
-          npm install
       - name: Build Frontend
         run: |
           cd frontend
+          npm install
           npm run build
