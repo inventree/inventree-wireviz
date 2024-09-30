@@ -223,8 +223,6 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
         panels = []
         part = None
 
-        print("get_ui_panel:", instance_type, instance_id)
-
         if instance_type == 'part':
             try:
                 part = Part.objects.get(pk=instance_id)
@@ -242,11 +240,6 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
                 'label': 'Harness Diagram',
                 'context': ctx,
                 'source': '/static/plugin/wireviz.js',
-                'content': render_template(
-                    self,
-                    'wireviz/harness_panel.html',
-                    context=self.panel_context_from_instance(part),
-                )
             })
         
         return panels
