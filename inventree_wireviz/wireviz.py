@@ -14,7 +14,6 @@ from django.template.loader import render_to_string
 from django.urls import path
 
 from plugin import InvenTreePlugin
-from plugin.helpers import render_template
 from plugin.mixins import PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin
 
 from build.views import BuildDetail
