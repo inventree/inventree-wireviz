@@ -101,5 +101,3 @@ celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
-
-src/frontend/tsconfig.app.tsbuildinfo
