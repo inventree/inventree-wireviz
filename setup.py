@@ -1,12 +1,24 @@
 # -*- coding: utf-8 -*-
 
+import pathlib
 import setuptools
+import shutil
 
 from inventree_wireviz.version import PLUGIN_VERSION
 
 with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
+# Copy the compiled frontend files into the 'static' directory
+# Required for MANIFEST.in to work correctly
+# src_dir = pathlib.Path('frontend/dist/static')
+# dst_dir = pathlib.Path('inventree_wireviz/static')
+
+# # Clean out the destination directory
+# if dst_dir.exists():
+#     shutil.rmtree(dst_dir)
+
+# shutil.copytree(src_dir, dst_dir)
 
 setuptools.setup(
     name="inventree-wireviz-plugin",

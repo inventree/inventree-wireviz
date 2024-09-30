@@ -10,7 +10,6 @@ export default defineConfig({
     rollupOptions: {
       preserveEntrySignatures: "exports-only",
       input: [
-        './src/main.tsx',
         './src/WirevizPanel.tsx'
       ],
       output: {
