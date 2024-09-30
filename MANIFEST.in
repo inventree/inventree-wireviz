@@ -1,1 +1,2 @@
 recursive-include inventree_wireviz/templates *
+recursive-include frontend/dist/static *
