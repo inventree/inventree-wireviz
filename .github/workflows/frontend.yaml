@@ -16,6 +16,6 @@ jobs:
           node-version: "18"
       - name: Build Frontend
         run: |
-          cd frontend
+          cd inventree_wireviz/frontend
           npm install
           npm run build

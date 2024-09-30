@@ -28,7 +28,7 @@ jobs:
           pip install --upgrade wheel setuptools twine
       - name: Build Frontend
         run: |
-          cd frontend
+          cd inventree_wireviz/frontend
           npm install
           npm run build
       - name: Build Binary
