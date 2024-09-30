@@ -11,10 +11,12 @@ This project uses [Vite](https://vitejs.dev/) as the build tool. We followed [th
 To compile the frontend code, run:
 
 ```bash
-npm run build
+npm run build --emptyOutDir
 ```
 
-This will compile the frontend code into the `dist/static` directory.
+This will compile the frontend code into the `../inventree_wireviz/static` directory.
+
+Note: The target directory is intentionally outside of hte frontend directory, so that the compiled files are correctly bundled into the python package install.
 
 ## Testing
 

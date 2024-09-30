@@ -13,8 +13,9 @@ export default defineConfig({
         './src/WirevizPanel.tsx'
       ],
       output: {
-        entryFileNames: 'static/[name].js',
-        assetFileNames: 'static/assets/[name].[ext]',
+        dir: '../inventree_wireviz/static',
+        entryFileNames: '[name].js',
+        assetFileNames: 'assets/[name].[ext]',
       },
       }
   }

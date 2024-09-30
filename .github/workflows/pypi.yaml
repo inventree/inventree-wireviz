@@ -30,7 +30,7 @@ jobs:
         run: |
           cd frontend
           npm install
-          npm run build
+          npm run build --emptyOutDir
       - name: Build Binary
         run: |
           python -m build
