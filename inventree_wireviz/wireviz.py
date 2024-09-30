@@ -239,8 +239,7 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
                 'name': 'wireviz',
                 'label': 'Harness Diagram',
                 'context': ctx,
-                # TODO: Fix this path!!
-                'source': '/static/plugin/wireviz.js',
+                'source': f'/static/plugin/{self.SLUG}/WirevizPanel.js',
             })
         
         return panels
