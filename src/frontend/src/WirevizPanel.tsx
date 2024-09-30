@@ -1,6 +1,7 @@
 import '@mantine/core/styles.css';
 
-import { Alert, Anchor, Center, Container, Group, Image, MantineProvider, MantineTheme, Paper, SimpleGrid, Stack, Table, Text, useMantineColorScheme } from "@mantine/core";
+import { IconDotsVertical, IconTrash, IconUpload } from '@tabler/icons-react';
+import { ActionIcon, Alert, Anchor, Divider, Group, Image, MantineProvider, MantineTheme, Menu, Paper, SimpleGrid, Stack, Table, Text, Title, useMantineColorScheme } from "@mantine/core";
 import { StrictMode, useEffect, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -51,10 +52,12 @@ function WirevizPanel({context}: {context: any}) {
 
     const wirevizWarnings = useMemo(() => wirevizContext.wireviz_warnings ?? [], [wirevizContext]);
 
+    const wirevizSource = useMemo(() => wirevizContext.wireviz_source_file ?? null, [wirevizContext]);
+
     return (
         <>
         <Stack gap="xs" w="100%">
-            {wirevizErrors && (
+            {wirevizErrors && wirevizErrors.length > 0 && (
                 <Alert color="red" title="Wireviz Errors">
                     <Stack gap="xs">
                         {wirevizErrors.map((error: string) => (
@@ -63,7 +66,7 @@ function WirevizPanel({context}: {context: any}) {
                     </Stack>
                 </Alert>
             )}
-            {wirevizWarnings && (
+            {wirevizWarnings && wirevizWarnings.length > 0 && (
                 <Alert color="yellow" title="Wireviz Warnings">
                     <Stack gap="xs">
                         {wirevizWarnings.map((warning: string) => (
@@ -75,6 +78,21 @@ function WirevizPanel({context}: {context: any}) {
         <SimpleGrid cols={2}>
             <Paper shadow="lg" p="md">
         <Stack gap="xs">
+            <Group justify='space-between'>
+            <Title order={4}>Harness Diagram</Title>
+            <Menu position='left'>
+                <Menu.Target>
+                    <ActionIcon variant="transparent">
+                        <IconDotsVertical />
+                    </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown>
+                    <Menu.Item leftSection={<IconUpload />} >Upload New Diagram</Menu.Item>
+                    <Menu.Item leftSection={<IconTrash color="red"/>}>Remove Diagram</Menu.Item>
+                </Menu.Dropdown>
+            </Menu>
+            </Group>
+            <Divider />
             {wirevizDiagram ? (
                 <Image src={wirevizDiagram} alt="Wireviz diagram" />
             ) : (
@@ -86,6 +104,8 @@ function WirevizPanel({context}: {context: any}) {
             </Paper>
         <Paper shadow="lg" p="md">
         <Stack gap="xs">
+            <Title order={4}>Bill of Materials</Title>
+            <Divider />
             <Table>
                 <Table.Thead>
                     <Table.Tr>
@@ -104,7 +124,12 @@ function WirevizPanel({context}: {context: any}) {
             </Table>
         </Stack>
         </Paper>
-        </SimpleGrid>  
+        </SimpleGrid>
+        {wirevizSource && (
+            <Paper shadow="lg" p="md">
+                <Anchor href={wirevizSource} target="_blank">Wireviz Source File</Anchor>
+            </Paper>
+        )}
         </Stack>
         </>
     );
@@ -118,16 +143,10 @@ function WirevizPanel({context}: {context: any}) {
  */
 export function renderPanel(target: HTMLElement | null, context: any) {
 
-    console.log("renderPanel:", context);
-
     createRoot(target!).render(
         <StrictMode>
             <MantineProvider theme={context.theme as MantineTheme}>
-                <Container w="100%">
-                    <Center inline w="100%">
-                        <WirevizPanel context={context}/>
-                    </Center>
-                </Container>
+                <WirevizPanel context={context}/>
             </MantineProvider>
         </StrictMode>
     );
