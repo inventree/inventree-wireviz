@@ -1,8 +1,8 @@
 import '@mantine/core/styles.css';
 
 import { IconDotsVertical, IconTrash, IconUpload } from '@tabler/icons-react';
-import { ActionIcon, Alert, Anchor, Divider, Group, Image, MantineProvider, MantineTheme, Menu, Paper, SimpleGrid, Stack, Table, Text, Title, useMantineColorScheme } from "@mantine/core";
-import { StrictMode, useEffect, useMemo } from "react";
+import { ActionIcon, Alert, Anchor, Divider, Group, Image, MantineProvider, MantineTheme, Menu, Paper, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
+import { StrictMode, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 
 
@@ -35,12 +35,6 @@ function WirevizBomRow({row}: {row: any}) {
 
 
 function WirevizPanel({context}: {context: any}) {
-
-    const { setColorScheme } = useMantineColorScheme();
-    
-    useEffect(() => {
-        setColorScheme(context.colorScheme ?? 'light');
-    }, [context.colorScheme]);
 
     const wirevizContext = useMemo(() => context?.context ?? {}, [context]);
 
