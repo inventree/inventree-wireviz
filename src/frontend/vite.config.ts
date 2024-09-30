@@ -11,8 +11,13 @@ export default defineConfig({
       preserveEntrySignatures: "exports-only",
       input: [
         './src/main.tsx',
+        './src/WirevizPanel.tsx'
       ],
+      external: ['react'],
       output: {
+        globals: {
+          react: 'React',
+        },
         entryFileNames: 'static/[name].js',
         assetFileNames: 'static/assets/[name].[ext]',
       },

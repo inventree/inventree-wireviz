@@ -1,10 +1,10 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
 import './index.css'
+import { renderPanel } from './WirevizPanel.tsx'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+/**
+ * Demo for rendering the Wireviz panel with some sample content
+ */
+renderPanel(
+  document.getElementById('root'),
+  {}
+);

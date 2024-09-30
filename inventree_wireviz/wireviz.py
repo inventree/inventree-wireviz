@@ -232,9 +232,16 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
                 part = None
 
         if part and part.get_metadata('wireviz'):
+
+            ctx = self.panel_context_from_instance(part)
+
+            ctx['part'] = part.pk
+
             panels.append({
                 'name': 'wireviz',
                 'label': 'Harness Diagram',
+                'context': ctx,
+                'source': '/static/plugin/wireviz.js',
                 'content': render_template(
                     self,
                     'wireviz/harness_panel.html',
