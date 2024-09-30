@@ -16,9 +16,9 @@ jobs:
           node-version: "18"
       - name: Install Deps
         run: |
-          cd src/frontend
+          cd frontend
           npm install
       - name: Build Frontend
         run: |
-          cd src/frontend
+          cd frontend
           npm run build
