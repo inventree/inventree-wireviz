@@ -14,7 +14,8 @@ from django.template.loader import render_to_string
 from django.urls import path
 
 from plugin import InvenTreePlugin
-from plugin.mixins import PanelMixin, ReportMixin, SettingsMixin, UrlsMixin
+from plugin.helpers import render_template
+from plugin.mixins import PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin
 
 from build.views import BuildDetail
 from part.models import Part, PartCategory
@@ -26,7 +27,7 @@ from .version import PLUGIN_VERSION
 logger = logging.getLogger('inventree')
 
 
-class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTreePlugin):
+class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, InvenTreePlugin):
     """"Wireviz plugin for InvenTree
     
     - Provides a custom panel for rendering wireviz diagrams
@@ -131,7 +132,13 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
         except AttributeError:
             return context
 
+        return self.panel_context_from_instance(instance)
+
+    def panel_context_from_instance(self, instance):
+
         part = self.get_part_from_instance(instance)
+
+        context = {}
 
         if part and isinstance(part, Part):
 
@@ -207,6 +214,33 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
                     'content_template': 'wireviz/harness_panel.html',
                     'javascript_template': 'wireviz/harness_panel.js',
                 })
+        
+        return panels
+
+    def get_ui_panels(self, instance_type, instance_id, request, **kwargs):
+        """Return custom UI panels for the wireviz plugin."""
+
+        panels = []
+        part = None
+
+        print("get_ui_panel:", instance_type, instance_id)
+
+        if instance_type == 'part':
+            try:
+                part = Part.objects.get(pk=instance_id)
+            except Part.DoesNotExist:
+                part = None
+
+        if part and part.get_metadata('wireviz'):
+            panels.append({
+                'name': 'wireviz',
+                'label': 'Harness Diagram',
+                'content': render_template(
+                    self,
+                    'wireviz/harness_panel.html',
+                    context=self.panel_context_from_instance(part),
+                )
+            })
         
         return panels
 
