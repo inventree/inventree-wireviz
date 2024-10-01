@@ -44,6 +44,9 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
     SLUG = "wireviz"
     TITLE = "Wireviz Plugin"
 
+    # Javascript file which renders custom plugin settings
+    ADMIN_PANEL_JS_FILE = "WirevizSettings.js"
+
     # Filenames and key constants
     HARNESS_SVG_FILE = "wireviz_harness.svg"
 
