@@ -253,8 +253,8 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
             ctx['part'] = part.pk
 
             panels.append({
-                'name': 'wireviz',
-                'label': 'Harness Diagram',
+                'key': 'wireviz',
+                'title': 'Harness Diagram',
                 'context': ctx,
                 'source': self.plugin_static_file('WirevizPanel.js:renderWirevizPanel'),
             })
