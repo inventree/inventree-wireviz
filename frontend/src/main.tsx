@@ -1,9 +1,9 @@
-import { renderPanel } from './WirevizPanel.tsx'
+import { renderWirevizPanel } from './WirevizPanel.tsx'
 
 /**
  * Demo for rendering the Wireviz panel with some sample content
  */
-renderPanel(
+renderWirevizPanel(
   document.getElementById('root'),
   {
     context: {

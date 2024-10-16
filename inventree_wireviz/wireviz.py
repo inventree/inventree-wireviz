@@ -45,7 +45,7 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
     TITLE = "Wireviz Plugin"
 
     # Javascript file which renders custom plugin settings
-    ADMIN_PANEL_JS_FILE = "WirevizSettings.js"
+    ADMIN_SOURCE = "WirevizSettings.js"
 
     # Filenames and key constants
     HARNESS_SVG_FILE = "wireviz_harness.svg"
@@ -219,16 +219,31 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
         
         return panels
 
-    def get_ui_panels(self, instance_type, instance_id, request, **kwargs):
+    def get_ui_panels(self, request, context=None, **kwargs):
         """Return custom UI panels for the wireviz plugin."""
+
+        from build.models import Build
+
+        context = context or {}
+
+        target_model = context.get('target_model', None)
+        target_id = context.get('target_id', None)
 
         panels = []
         part = None
 
-        if instance_type == 'part':
+        if target_model == 'part':
             try:
-                part = Part.objects.get(pk=instance_id)
+                part = Part.objects.get(pk=target_id)
             except Part.DoesNotExist:
+                part = None
+
+        elif target_model == 'build':
+            # Display on the "build" page too
+            try:
+                build = Build.objects.get(pk=target_id)
+                part = build.part
+            except Build.DoesNotExist:
                 part = None
 
         if part and part.get_metadata('wireviz'):
@@ -241,7 +256,7 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
                 'name': 'wireviz',
                 'label': 'Harness Diagram',
                 'context': ctx,
-                'source': self.plugin_static_file('WirevizPanel.js'),
+                'source': self.plugin_static_file('WirevizPanel.js:renderWirevizPanel'),
             })
         
         return panels

@@ -135,7 +135,7 @@ function WirevizPanel({context}: {context: any}) {
  * @param target 
  * @param context 
  */
-export function renderPanel(target: HTMLElement | null, context: any) {
+export function renderWirevizPanel(target: HTMLElement | null, context: any) {
 
     createRoot(target!).render(
         <StrictMode>
