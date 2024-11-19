@@ -246,7 +246,7 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
             except Build.DoesNotExist:
                 part = None
 
-        if part and part.get_metadata('wireviz'):
+        if part: # and part.get_metadata('wireviz'):
 
             ctx = self.panel_context_from_instance(part)
 
@@ -255,6 +255,8 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
             panels.append({
                 'key': 'wireviz',
                 'title': 'Harness Diagram',
+                'description': 'View wire harness diagram',
+                'icon': 'ti:topology-star:outline',
                 'context': ctx,
                 'source': self.plugin_static_file('WirevizPanel.js:renderWirevizPanel'),
             })
