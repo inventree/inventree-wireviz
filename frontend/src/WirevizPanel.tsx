@@ -90,7 +90,7 @@ function WirevizPanel({context}: {context: any}) {
             {wirevizDiagram ? (
                 <Image src={wirevizDiagram} alt="Wireviz diagram" />
             ) : (
-                <Alert color="red" title={"No Diagram Avaialable"}>
+                <Alert color="red" title={"No Diagram Available"}>
                     <Text>No Wireviz diagram available for this part</Text>
                 </Alert>
             )}
