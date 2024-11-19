@@ -14,7 +14,7 @@ from django.template.loader import render_to_string
 from django.urls import path
 
 from plugin import InvenTreePlugin
-from plugin.mixins import PanelMixin, ReportMixin, SettingsMixin, UrlsMixin
+from plugin.mixins import PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin
 
 from build.views import BuildDetail
 from part.models import Part, PartCategory
@@ -26,7 +26,7 @@ from .version import PLUGIN_VERSION
 logger = logging.getLogger('inventree')
 
 
-class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTreePlugin):
+class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, InvenTreePlugin):
     """"Wireviz plugin for InvenTree
     
     - Provides a custom panel for rendering wireviz diagrams
@@ -43,6 +43,9 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
     NAME = "Wireviz"
     SLUG = "wireviz"
     TITLE = "Wireviz Plugin"
+
+    # Javascript file which renders custom plugin settings
+    ADMIN_SOURCE = "WirevizSettings.js"
 
     # Filenames and key constants
     HARNESS_SVG_FILE = "wireviz_harness.svg"
@@ -131,7 +134,13 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
         except AttributeError:
             return context
 
+        return self.panel_context_from_instance(instance)
+
+    def panel_context_from_instance(self, instance):
+
         part = self.get_part_from_instance(instance)
+
+        context = {}
 
         if part and isinstance(part, Part):
 
@@ -207,6 +216,50 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
                     'content_template': 'wireviz/harness_panel.html',
                     'javascript_template': 'wireviz/harness_panel.js',
                 })
+        
+        return panels
+
+    def get_ui_panels(self, request, context=None, **kwargs):
+        """Return custom UI panels for the wireviz plugin."""
+
+        from build.models import Build
+
+        context = context or {}
+
+        target_model = context.get('target_model', None)
+        target_id = context.get('target_id', None)
+
+        panels = []
+        part = None
+
+        if target_model == 'part':
+            try:
+                part = Part.objects.get(pk=target_id)
+            except Part.DoesNotExist:
+                part = None
+
+        elif target_model == 'build':
+            # Display on the "build" page too
+            try:
+                build = Build.objects.get(pk=target_id)
+                part = build.part
+            except Build.DoesNotExist:
+                part = None
+
+        if part: # and part.get_metadata('wireviz'):
+
+            ctx = self.panel_context_from_instance(part)
+
+            ctx['part'] = part.pk
+
+            panels.append({
+                'key': 'wireviz',
+                'title': 'Harness Diagram',
+                'description': 'View wire harness diagram',
+                'icon': 'ti:topology-star:outline',
+                'context': ctx,
+                'source': self.plugin_static_file('WirevizPanel.js:renderWirevizPanel'),
+            })
         
         return panels
 
