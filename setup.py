@@ -22,8 +22,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=[
-        'wireviz',
-        'pint',
+        'wireviz>=0.4.1',
+        'pint>=0.24.4',
     ],
     setup_requires=[
         "wheel",
