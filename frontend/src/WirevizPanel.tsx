@@ -1,9 +1,10 @@
-import '@mantine/core/styles.css';
 
+// Import for type checking
+import { checkPluginVersion, type InvenTreePluginContext } from '@inventreedb/ui';
+import { ApiEndpoints, apiUrl } from '@inventreedb/ui';
+import { ActionIcon, Alert, Anchor, Button, Divider, Group, Image, Menu, Paper, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core';
 import { IconDotsVertical, IconTrash, IconUpload } from '@tabler/icons-react';
-import { ActionIcon, Alert, Anchor, Divider, Group, Image, MantineProvider, MantineTheme, Menu, Paper, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
-import { StrictMode, useMemo } from "react";
-import { createRoot } from "react-dom/client";
+import { useMemo } from 'react';
 
 
 function WirevizBomRow({row}: {row: any}) {
@@ -34,7 +35,7 @@ function WirevizBomRow({row}: {row: any}) {
 }
 
 
-function WirevizPanel({context}: {context: any}) {
+function WirevizPanel({context}: {context: InvenTreePluginContext}) {
 
     const wirevizContext = useMemo(() => context?.context ?? {}, [context]);
 
@@ -48,8 +49,20 @@ function WirevizPanel({context}: {context: any}) {
 
     const wirevizSource = useMemo(() => wirevizContext.wireviz_source_file ?? null, [wirevizContext]);
 
+    // TODO: ...
+    const newDiagram = context.forms.create({
+        title: 'Upload New Wireviz Diagram',
+        url: apiUrl(ApiEndpoints.part_list),
+        method: 'POST',
+        fields: {
+            name: {},
+            description: {},
+        }
+    });
+
     return (
         <>
+        {newDiagram.modal}
         <Stack gap="xs" w="100%">
             {wirevizErrors && wirevizErrors.length > 0 && (
                 <Alert color="red" title="Wireviz Errors">
@@ -124,24 +137,15 @@ function WirevizPanel({context}: {context: any}) {
                 <Anchor href={wirevizSource} target="_blank">Wireviz Source File</Anchor>
             </Paper>
         )}
+        <Button onClick={newDiagram.open} color="blue">Upload New Wireviz Diagram</Button>
         </Stack>
         </>
     );
 }
 
 
-/**
- * Render the Wireviz panel against the provided target element
- * @param target 
- * @param context 
- */
-export function renderWirevizPanel(target: HTMLElement | null, context: any) {
-
-    createRoot(target!).render(
-        <StrictMode>
-            <MantineProvider theme={context.theme as MantineTheme}>
-                <WirevizPanel context={context}/>
-            </MantineProvider>
-        </StrictMode>
-    );
+// Render the Wireviz panel against the provided target element
+export function renderWirevizPanel(context: InvenTreePluginContext) {
+    checkPluginVersion(context);
+    return <WirevizPanel context={context} />;
 }
