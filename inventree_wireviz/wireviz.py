@@ -58,6 +58,16 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
             'description': 'Select the part category for wire harnesses',
             'model': 'part.partcategory',
         },
+        "HARNESS_GROUP_VIEWERS": {
+            'name': 'Wire Harness Viewers',
+            'description': 'Select user group who can view wire harnesses',
+            'model': 'auth.group',
+        },
+        "HARNESS_GROUP_EDITORS": {
+            'name': 'Wire Harness Editors',
+            'description': 'Select user group who can edit wire harnesses',
+            'model': 'auth.group',
+        },
         "WIREVIZ_PATH": {
             'name': 'Wireviz Upload Path',
             'description': 'Path to store uploaded wireviz template files (relative to media root)',

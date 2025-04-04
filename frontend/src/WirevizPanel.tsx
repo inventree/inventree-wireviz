@@ -2,8 +2,8 @@
 // Import for type checking
 import { checkPluginVersion, type InvenTreePluginContext } from '@inventreedb/ui';
 import { apiUrl } from '@inventreedb/ui';
-import { ActionIcon, Alert, Anchor, Button, Divider, Group, Image, Menu, Paper, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core';
-import { IconDotsVertical, IconTrash, IconUpload } from '@tabler/icons-react';
+import { ActionIcon, Alert, Anchor, Divider, Group, Image, Menu, Paper, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core';
+import { IconDotsVertical, IconFile, IconTrash, IconUpload } from '@tabler/icons-react';
 import { useMemo } from 'react';
 
 
@@ -59,6 +59,12 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
                 hidden: true,
             },
             file: {},
+        },
+        successMessage: 'Diagram uploaded',
+        onFormSuccess: () => {
+            // Hacky: reload the page to refresh the diagram
+            // TODO: Dynamically inject the new diagram into the page
+            window.location.reload();
         }
     });
 
@@ -89,15 +95,15 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
         <Stack gap="xs">
             <Group justify='space-between'>
             <Title order={4}>Harness Diagram</Title>
-            <Menu position='left'>
+            <Menu position='bottom-end' withArrow>
                 <Menu.Target>
                     <ActionIcon variant="transparent">
                         <IconDotsVertical />
                     </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
-                    <Menu.Item leftSection={<IconUpload />} >Upload New Diagram</Menu.Item>
-                    <Menu.Item leftSection={<IconTrash color="red"/>}>Remove Diagram</Menu.Item>
+                    <Menu.Item onClick={newDiagram.open} leftSection={<IconUpload color="green" />} >Upload New Diagram</Menu.Item>
+                    {wirevizSource && <Menu.Item leftSection={<IconTrash color="red"/>}>Remove Diagram</Menu.Item>}
                 </Menu.Dropdown>
             </Menu>
             </Group>
@@ -115,7 +121,7 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
         <Stack gap="xs">
             <Title order={4}>Bill of Materials</Title>
             <Divider />
-            <Table>
+            <Table striped>
                 <Table.Thead>
                     <Table.Tr>
                         <Table.Th>ID</Table.Th>
@@ -136,10 +142,14 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
         </SimpleGrid>
         {wirevizSource && (
             <Paper shadow="lg" p="md">
-                <Anchor href={wirevizSource} target="_blank">Wireviz Source File</Anchor>
+                <Anchor href={wirevizSource} target="_blank">
+                    <Group gap='xs'>
+                        <IconFile />
+                        <Text>Wireviz Source File</Text>
+                    </Group>
+                </Anchor>
             </Paper>
         )}
-        <Button onClick={newDiagram.open} color="blue">Upload New Wireviz Diagram</Button>
         </Stack>
         </>
     );
@@ -149,5 +159,7 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
 // Render the Wireviz panel against the provided target element
 export function renderWirevizPanel(context: InvenTreePluginContext) {
     checkPluginVersion(context);
+    console.log("Plugin Context:", context.context);
+
     return <WirevizPanel context={context} />;
 }
