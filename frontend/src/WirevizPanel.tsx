@@ -1,7 +1,7 @@
 
 // Import for type checking
 import { checkPluginVersion, type InvenTreePluginContext } from '@inventreedb/ui';
-import { ApiEndpoints, apiUrl } from '@inventreedb/ui';
+import { apiUrl } from '@inventreedb/ui';
 import { ActionIcon, Alert, Anchor, Button, Divider, Group, Image, Menu, Paper, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core';
 import { IconDotsVertical, IconTrash, IconUpload } from '@tabler/icons-react';
 import { useMemo } from 'react';
@@ -49,14 +49,16 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
 
     const wirevizSource = useMemo(() => wirevizContext.wireviz_source_file ?? null, [wirevizContext]);
 
-    // TODO: ...
     const newDiagram = context.forms.create({
         title: 'Upload New Wireviz Diagram',
-        url: apiUrl(ApiEndpoints.part_list),
+        url: apiUrl("/plugin/wireviz/upload/"),
         method: 'POST',
         fields: {
-            name: {},
-            description: {},
+            part: {
+                value: context.id,
+                hidden: true,
+            },
+            file: {},
         }
     });
 
