@@ -26,6 +26,7 @@ export default defineConfig({
       input: [
         './src/WirevizPanel.tsx',
         './src/WirevizSettings.tsx',
+        './src/WirevizDashboard.tsx',
       ],
       output: {
         dir: '../inventree_wireviz/static',

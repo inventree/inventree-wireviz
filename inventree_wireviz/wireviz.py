@@ -177,6 +177,20 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
 
         return context
 
+    def get_ui_dashboard_items(self, request, context=None, **kwargs):
+        """Return custom dashboard items for the wireviz plugin."""
+
+        # TODO: Only show if user can *create* wireviz diagrams
+        return [
+            {
+                'key': 'wireviz',
+                'title': 'Create Wireviz Diagram',
+                'description': 'Create a new wireviz diagram from the dashboard',
+                'icon': 'ti:topology-star:outline',
+                'source': self.plugin_static_file('WirevizDashboard.js:renderWirevizDashboard'),
+            }
+        ]
+
     def get_ui_panels(self, request, context=None, **kwargs):
         """Return custom UI panels for the wireviz plugin."""
 
@@ -189,6 +203,8 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
 
         panels = []
         part = None
+
+        # TODO: Only show if user can *view* wireviz diagrams
 
         if target_model == 'part':
             try:

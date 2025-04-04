@@ -1,15 +1,21 @@
 
 // Import for type checking
 import { checkPluginVersion, type InvenTreePluginContext } from '@inventreedb/ui';
-import { apiUrl } from '@inventreedb/ui';
+import { apiUrl, getDetailUrl, navigateToLink, ModelType } from '@inventreedb/ui';
 import { ActionIcon, Alert, Anchor, Divider, Group, Image, Menu, Paper, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core';
 import { IconDotsVertical, IconFile, IconTrash, IconUpload } from '@tabler/icons-react';
 import { useMemo } from 'react';
 
 
-function WirevizBomRow({row}: {row: any}) {
+function WirevizBomRow({
+    context,
+    row,
+}: {
+    context: InvenTreePluginContext,
+    row: any
+}) {
 
-    const hasPartLink: boolean = !!row.sub_part && !!row.pn;
+    const partLink: string = (!!row.sub_part && !!row.pn) ? getDetailUrl(ModelType.part, row.sub_part, true) : '';
 
     return (
         <Table.Tr key={`bom-${row.idx}`}>
@@ -23,8 +29,8 @@ function WirevizBomRow({row}: {row: any}) {
                 </Group>
             </Table.Td>
             <Table.Td key='col-prt'>
-                {hasPartLink ? (
-                    <Anchor href={`/part/${row.sub_part}/`}>{row.pn}</Anchor>
+                {partLink ? (
+                    <Anchor href={partLink} onClick={(event: any) => navigateToLink(partLink, context.navigate, event)}>{row.pn}</Anchor>
                 ) : (
                     <Text>-</Text>
                 )}
@@ -133,7 +139,7 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
                 </Table.Thead>
                 <Table.Tbody>
                     {bomRows.map((row: any) => (
-                        <WirevizBomRow row={row} />
+                        <WirevizBomRow row={row} context={context}/>
                     ))}
                 </Table.Tbody>
             </Table>
@@ -156,7 +162,6 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
 }
 
 
-// Render the Wireviz panel against the provided target element
 export function renderWirevizPanel(context: InvenTreePluginContext) {
     checkPluginVersion(context);
     console.log("Plugin Context:", context.context);
