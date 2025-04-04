@@ -14,11 +14,9 @@ from django.template.loader import render_to_string
 from django.urls import path
 
 from plugin import InvenTreePlugin
-from plugin.mixins import PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin
+from plugin.mixins import ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin
 
-from build.views import BuildDetail
 from part.models import Part, PartCategory
-from part.views import PartDetail
 
 from .version import PLUGIN_VERSION
 
@@ -26,7 +24,7 @@ from .version import PLUGIN_VERSION
 logger = logging.getLogger('inventree')
 
 
-class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, InvenTreePlugin):
+class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, InvenTreePlugin):
     """"Wireviz plugin for InvenTree
     
     - Provides a custom panel for rendering wireviz diagrams
@@ -168,56 +166,6 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, UserInter
                 context['wireviz_errors'] = wireviz_metadata.get('errors', None)
 
         return context
-
-    def get_custom_panels(self, view, request):
-        """Determine if custom panels should be displayed in the UI."""
-
-        panels = []
-
-        try:
-            instance = view.get_object()
-        except AttributeError:
-            return panels
-        
-        part = self.get_part_from_instance(instance)
-
-        # A valid part object has been found
-        if part and isinstance(part, Part):
-
-            add_panel = False
-
-            # We are on the PartDetail or BuildDetail page
-            if isinstance(view, PartDetail) or isinstance(view, BuildDetail):
-
-                logger.debug(f"Checking for wireviz file for part {part}")
-
-                metadata = part.get_metadata('wireviz')
-
-                if metadata:
-                    add_panel = True
-
-            if not add_panel and isinstance(view, PartDetail):
-                # Check if the Part belongs to the harness category
-                if harness_category := self.get_setting('HARNESS_CATEGORY'):
-                    try:
-                        category = PartCategory.objects.get(pk=harness_category)
-                        children = category.get_descendants(include_self=True)
-
-                        if part.category in children:
-                            add_panel = True
-
-                    except (PartCategory.DoesNotExist, ValueError):
-                        pass
-
-            if add_panel:
-                panels.append({
-                    'title': 'Harness Diagram',
-                    'icon': 'fas fa-project-diagram',
-                    'content_template': 'wireviz/harness_panel.html',
-                    'javascript_template': 'wireviz/harness_panel.js',
-                })
-        
-        return panels
 
     def get_ui_panels(self, request, context=None, **kwargs):
         """Return custom UI panels for the wireviz plugin."""
