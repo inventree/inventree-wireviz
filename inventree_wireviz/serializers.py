@@ -69,8 +69,13 @@ class WirevizUploadSerializer(serializers.Serializer):
     def validate_file(self, file):
         """Validate the uploaded wireviz file."""
 
-        mgr = WirevizImportManager()
-        mgr.parse_wireviz_file(file.file)
+        try:
+            mgr = WirevizImportManager()
+            mgr.parse_wireviz_file(file.file)
+        except ValidationError as e:
+            raise e
+        except Exception:
+            raise ValidationError("Error parsing wireviz file")
 
         return file
 

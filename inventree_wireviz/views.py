@@ -4,13 +4,16 @@ from rest_framework import permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from InvenTree.mixins import CreateAPI
+
 from .serializers import DeleteTemplateSerializer, UploadTemplateSerializer, WirevizDeleteSerializer, WirevizUploadSerializer
 
 
-class UploadWirevizView(APIView):
+class UploadWirevizView(CreateAPI):
     """View for uploading a new wireviz file."""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = WirevizUploadSerializer
 
     def post(self, request, *args, **kwargs):
         """Handle POST request for uploading a new wireviz file."""
