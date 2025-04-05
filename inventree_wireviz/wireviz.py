@@ -134,15 +134,48 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
                 if bom_data := metadata.get(self.HARNESS_BOM_KEY, None):
                     context['wireviz_bom_data'] = bom_data
 
-    def get_panel_context(self, view, request, context):
-        """Return context information for the Wireviz panel."""
+    def get_harness_category(self):
+        """Return the wire harness category ID."""
 
-        try:
-            instance = view.get_object()
-        except AttributeError:
-            return context
+        if category_id := self.get_setting('HARNESS_CATEGORY'):
+            try:
+                category = PartCategory.objects.get(pk=category_id)
+                return category
+            except PartCategory.DoesNotExist:
+                logger.warning("Wireviz: Invalid wire harness category ID")
+                return None
 
-        return self.panel_context_from_instance(instance)
+        return None
+
+    def should_display_panel(self, part, build, user):
+        """Determine if the wireviz panel should be displayed for the given part."""
+
+        # Part is not a Part instance
+        if not part or not isinstance(part, Part):
+            return False
+
+        # Part must be marked as an assembly item
+        if not part.assembly:
+            return False
+
+        # TODO: Check if the user is in a group that can view wire harnesses
+        # TODO: Return false if not
+
+        # If the part already has a wireviz diagram, show the panel
+        if part.get_metadata('wireviz'):
+            return True
+        
+        if build:
+            # Beyond this point, if we are displaying for a build order, we do not display the panel
+            return False
+        
+        # Check if the part has a wire harness category
+        if wireviz_category := self.get_harness_category():
+            valid_category_ids = [cat.id for cat in wireviz_category.get_descendants(include_self=True)]
+            return part.category and part.category.pk in valid_category_ids
+
+        # No reason not to!
+        return True
 
     def panel_context_from_instance(self, instance):
 
@@ -203,6 +236,7 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
 
         panels = []
         part = None
+        build = None
 
         # TODO: Only show if user can *view* wireviz diagrams
 
@@ -220,7 +254,7 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
             except Build.DoesNotExist:
                 part = None
 
-        if part: # and part.get_metadata('wireviz'):
+        if self.should_display_panel(part, build, request.user):
 
             ctx = self.panel_context_from_instance(part)
 
