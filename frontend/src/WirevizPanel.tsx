@@ -55,6 +55,28 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
 
     const wirevizSource = useMemo(() => wirevizContext.wireviz_source_file ?? null, [wirevizContext]);
 
+    const deleteDiagram = context.forms.create({
+        title: 'Remove Wireviz Diagram',
+        url: apiUrl("/plugin/wireviz/delete/"),
+        method: 'POST',
+        fields: {
+            part: {
+                value: context.id,
+                hidden: true,
+            },
+        },
+        preFormContent: (
+            <Alert color='red' title="Delete Diagram">
+                Delete the Wireviz diagram from this part?
+            </Alert>
+        ),
+        successMessage: 'Diagram removed',
+        onFormSuccess: () => {
+            // Hacky: reload the page to refresh the diagram
+            window.location.reload();
+        },
+    });
+
     const newDiagram = context.forms.create({
         title: 'Upload New Wireviz Diagram',
         url: apiUrl("/plugin/wireviz/upload/"),
@@ -77,6 +99,7 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
     return (
         <>
         {newDiagram.modal}
+        {deleteDiagram.modal}
         <Stack gap="xs" w="100%">
             {wirevizErrors && wirevizErrors.length > 0 && (
                 <Alert color="red" title="Wireviz Errors">
@@ -109,7 +132,7 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
                 </Menu.Target>
                 <Menu.Dropdown>
                     <Menu.Item onClick={newDiagram.open} leftSection={<IconUpload color="green" />} >Upload New Diagram</Menu.Item>
-                    {wirevizSource && <Menu.Item leftSection={<IconTrash color="red"/>}>Remove Diagram</Menu.Item>}
+                    {wirevizSource && <Menu.Item onClick={deleteDiagram.open} leftSection={<IconTrash color="red"/>}>Remove Diagram</Menu.Item>}
                 </Menu.Dropdown>
             </Menu>
             </Group>
