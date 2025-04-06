@@ -10,7 +10,7 @@
     "preview": "vite preview --host"
   },
   "dependencies": {
-    "@inventreedb/ui": "^0.0.5",
+    "@inventreedb/ui": "^0.0.6",
     "@tabler/icons-react": "^3.31.0"
   },
   "peerDependencies": {
