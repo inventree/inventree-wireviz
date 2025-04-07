@@ -55,6 +55,8 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
 
     const wirevizSource = useMemo(() => wirevizContext.wireviz_source_file ?? null, [wirevizContext]);
 
+    const canEdit : boolean = useMemo(() => wirevizContext.context?.can_edit ?? false, [wirevizContext.context]);
+
     const deleteDiagram = context.forms.create({
         title: 'Remove Wireviz Diagram',
         url: apiUrl("/plugin/wireviz/delete/"),
@@ -98,8 +100,8 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
 
     return (
         <>
-        {newDiagram.modal}
-        {deleteDiagram.modal}
+        {canEdit && newDiagram.modal}
+        {canEdit && deleteDiagram.modal}
         <Stack gap="xs" w="100%">
             {wirevizErrors && wirevizErrors.length > 0 && (
                 <Alert color="red" title="Wireviz Errors">
@@ -124,17 +126,19 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
         <Stack gap="xs">
             <Group justify='space-between'>
             <Title order={4}>Harness Diagram</Title>
-            <Menu position='bottom-end' withArrow>
-                <Menu.Target>
-                    <ActionIcon variant="transparent">
-                        <IconDotsVertical />
-                    </ActionIcon>
-                </Menu.Target>
-                <Menu.Dropdown>
-                    <Menu.Item onClick={newDiagram.open} leftSection={<IconUpload color="green" />} >Upload New Diagram</Menu.Item>
-                    {wirevizSource && <Menu.Item onClick={deleteDiagram.open} leftSection={<IconTrash color="red"/>}>Remove Diagram</Menu.Item>}
-                </Menu.Dropdown>
-            </Menu>
+            {canEdit && (
+                <Menu position='bottom-end' withArrow>
+                    <Menu.Target>
+                        <ActionIcon variant="transparent">
+                            <IconDotsVertical />
+                        </ActionIcon>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                        <Menu.Item onClick={newDiagram.open} leftSection={<IconUpload color="green" />} >Upload New Diagram</Menu.Item>
+                        {wirevizSource && <Menu.Item onClick={deleteDiagram.open} leftSection={<IconTrash color="red"/>}>Remove Diagram</Menu.Item>}
+                    </Menu.Dropdown>
+                </Menu>
+            )}
             </Group>
             <Divider />
             {wirevizDiagram ? (
