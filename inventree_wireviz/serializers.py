@@ -8,27 +8,16 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from part.models import Part
-from plugin.registry import registry
 
 from .processing import WirevizImportManager
 
 
 def template_path(template):
     """Return the fully qualified template path from a template string."""
-
-    plugin = registry.get_plugin('wireviz')
-
-    if not plugin:
-        return None
-    
-    subdir = plugin.get_setting('WIREVIZ_PATH')
-
-    if not subdir:
-        return None
     
     template = os.path.basename(template)
 
-    return os.path.abspath(os.path.join(settings.MEDIA_ROOT, subdir, template))
+    return os.path.abspath(os.path.join(settings.MEDIA_ROOT, 'wireviz', template))
 
 
 class WirevizDeleteSerializer(serializers.Serializer):
@@ -118,8 +107,9 @@ class UploadTemplateSerializer(serializers.Serializer):
     def save(self, **kwargs):
         """Save the uploaded wireviz template file."""
 
+        # Ensure directory exists first
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, 'wireviz'), exist_ok=True)
         template = self.validated_data['template']
-
         filename = template_path(template.name)
 
         with open(filename, 'w') as output:

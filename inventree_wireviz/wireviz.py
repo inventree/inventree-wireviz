@@ -10,7 +10,6 @@ import logging
 import os
 
 from django.conf import settings
-from django.template.loader import render_to_string
 from django.urls import path
 
 from plugin import InvenTreePlugin
@@ -68,11 +67,6 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
             'description': 'Select user group who can edit wire harnesses',
             'model': 'auth.group',
         },
-        "WIREVIZ_PATH": {
-            'name': 'Wireviz Upload Path',
-            'description': 'Path to store uploaded wireviz template files (relative to media root)',
-            'default': 'wireviz',
-        },
         "DELETE_OLD_FILES": {
             'name': 'Delete Old Files',
             'description': 'Delete old wireviz files when uploading a new wireviz file',
@@ -98,6 +92,17 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
             'validator': bool,
         },
     }
+
+    def get_admin_context(self) -> dict:
+        """Return the context for the admin settings page."""
+
+        ctx = {
+            'templates': self.get_template_files(),
+        }
+
+        print("admin_context:", ctx)
+
+        return ctx
 
     def get_part_from_instance(self, instance):
         """Return a Part object from the given instance."""
@@ -310,17 +315,12 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
         """Return a list of existing WireViz template files which have been uploaded."""
 
         templates = []
-        subdir = self.get_setting('WIREVIZ_PATH')
+        template_dir = os.path.join(settings.MEDIA_ROOT, 'wireviz')
 
-        if subdir:
-            path = os.path.join(settings.MEDIA_ROOT, subdir)
-            path = os.path.abspath(path)
-
-            if os.path.exists(path):
-                for f in os.listdir(path):
-                    if f.endswith('.wireviz'):
-                        template = os.path.join(subdir, f)
-                        templates.append(template)
+        if os.path.exists(template_dir):
+            for f in os.listdir(template_dir):
+                if f.endswith('.wireviz'):
+                    templates.append(f)
 
         return templates
 
@@ -336,24 +336,3 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
             path('delete-template/', views.DeleteTemplateView.as_view(), name='wireviz-delete-template'),
         ]
 
-    def get_settings_content(self, request):
-        """Custom settings content for the wireviz plugin page."""
-
-        ctx = {
-            'plugin': self,
-            'templates': self.get_template_files(),
-        }
-
-        try:
-            return render_to_string('wireviz/settings_panel.html', context=ctx, request=request)
-        except Exception as exp:
-            return f"""
-                <div class='panel-heading'>
-                    <h4>Template Error</h4>
-                </div>
-                <div class='panel-content'>
-                    <div class='alert alert-warning alert-block'>
-                    {str(exp)}
-                    </div>
-                </div>
-                """
