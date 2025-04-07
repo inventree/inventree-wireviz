@@ -250,15 +250,13 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
 
         # Only show if user can *create* wireviz diagrams
         if self.user_can_edit_harness(user):
-            items.append(
-                {
-                    'key': 'wireviz',
-                    'title': 'Create Wireviz Diagram',
-                    'description': 'Create a new wireviz diagram from the dashboard',
-                    'icon': 'ti:topology-star:outline',
-                    'source': self.plugin_static_file('WirevizDashboard.js:renderWirevizDashboard'),
-                }
-            )
+            items.append({
+                'key': 'wireviz',
+                'title': 'Create Wireviz Diagram',
+                'description': 'Create a new wireviz diagram from the dashboard',
+                'icon': 'ti:topology-star:outline',
+                'source': self.plugin_static_file('WirevizDashboard.js:renderWirevizDashboard'),
+            })
     
         return items
 
