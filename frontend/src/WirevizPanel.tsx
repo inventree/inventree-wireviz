@@ -55,7 +55,7 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
 
     const wirevizSource = useMemo(() => wirevizContext.wireviz_source_file ?? null, [wirevizContext]);
 
-    const canEdit : boolean = useMemo(() => wirevizContext.context?.can_edit ?? false, [wirevizContext.context]);
+    const canEdit : boolean = useMemo(() => wirevizContext?.can_edit ?? false, [wirevizContext]);
 
     const deleteDiagram = context.forms.create({
         title: 'Remove Wireviz Diagram',
@@ -191,7 +191,5 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
 
 export function renderWirevizPanel(context: InvenTreePluginContext) {
     checkPluginVersion(context);
-    console.log("Plugin Context:", context.context);
-
     return <WirevizPanel context={context} />;
 }
