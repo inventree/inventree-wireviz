@@ -250,7 +250,7 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
 
         # Only show if user can *create* wireviz diagrams
         if self.user_can_edit_harness(user):
-            items.append([
+            items.append(
                 {
                     'key': 'wireviz',
                     'title': 'Create Wireviz Diagram',
@@ -258,7 +258,7 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
                     'icon': 'ti:topology-star:outline',
                     'source': self.plugin_static_file('WirevizDashboard.js:renderWirevizDashboard'),
                 }
-            ])
+            )
     
         return items
 
