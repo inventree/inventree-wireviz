@@ -147,6 +147,36 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
 
         return None
 
+    def user_can_view_harness(self, user) -> bool:
+        """Determine if the provided user can view wire harnesses."""
+
+        if user.is_superuser:
+            # Superuser can view everything
+            return True
+
+        if group_id := self.get_setting('HARNESS_GROUP_VIEWERS'):
+            # View group is specified - user must be a member of this group
+            return user.groups.filter(pk=group_id).exists()
+
+        # No group specified - user can view wire harnesses
+        return True
+    
+    def user_can_edit_harness(self, user) -> bool:
+        """Determine if the provided user can edit wire harnesses."""
+        if not self.user_can_view_harness(user):
+            return False
+        
+        if user.is_superuser:
+            # Superuser can edit everything
+            return True
+
+        if group_id := self.get_setting('HARNESS_GROUP_EDITORS'):
+            # Edit group is specified - user must be a member of this group
+            return user.groups.filter(pk=group_id).exists()
+
+        # No group specified - user can edit wire harnesses
+        return True
+
     def should_display_panel(self, part, build, user):
         """Determine if the wireviz panel should be displayed for the given part."""
 
@@ -158,8 +188,9 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
         if not part.assembly:
             return False
 
-        # TODO: Check if the user is in a group that can view wire harnesses
-        # TODO: Return false if not
+        # Check if the user is in a group that can view wire harnesses
+        if not self.user_can_view_harness(user):
+            return False
 
         # If the part already has a wireviz diagram, show the panel
         if part.get_metadata('wireviz'):
@@ -213,16 +244,23 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
     def get_ui_dashboard_items(self, request, context=None, **kwargs):
         """Return custom dashboard items for the wireviz plugin."""
 
-        # TODO: Only show if user can *create* wireviz diagrams
-        return [
-            {
-                'key': 'wireviz',
-                'title': 'Create Wireviz Diagram',
-                'description': 'Create a new wireviz diagram from the dashboard',
-                'icon': 'ti:topology-star:outline',
-                'source': self.plugin_static_file('WirevizDashboard.js:renderWirevizDashboard'),
-            }
-        ]
+        user = getattr(request, 'user', None)
+
+        items = []
+
+        # Only show if user can *create* wireviz diagrams
+        if self.user_can_edit_harness(user):
+            items.append([
+                {
+                    'key': 'wireviz',
+                    'title': 'Create Wireviz Diagram',
+                    'description': 'Create a new wireviz diagram from the dashboard',
+                    'icon': 'ti:topology-star:outline',
+                    'source': self.plugin_static_file('WirevizDashboard.js:renderWirevizDashboard'),
+                }
+            ])
+    
+        return items
 
     def get_ui_panels(self, request, context=None, **kwargs):
         """Return custom UI panels for the wireviz plugin."""
@@ -237,8 +275,6 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
         panels = []
         part = None
         build = None
-
-        # TODO: Only show if user can *view* wireviz diagrams
 
         if target_model == 'part':
             try:
@@ -259,6 +295,7 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
             ctx = self.panel_context_from_instance(part)
 
             ctx['part'] = part.pk
+            ctx['can_edit'] = self.user_can_edit_harness(request.user) and not build
 
             panels.append({
                 'key': 'wireviz',
