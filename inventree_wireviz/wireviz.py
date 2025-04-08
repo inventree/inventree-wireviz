@@ -335,4 +335,3 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
             path('upload-template/', views.UploadTemplateView.as_view(), name='wireviz-upload-template'),
             path('delete-template/', views.DeleteTemplateView.as_view(), name='wireviz-delete-template'),
         ]
-
