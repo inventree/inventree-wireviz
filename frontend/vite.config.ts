@@ -12,6 +12,7 @@ export default defineConfig({
       react: 'React',
       'react-dom': 'ReactDOM',
       '@mantine/core': 'MantineCore',
+      '@mantine/hooks': 'MantineHooks',
       "@mantine/notifications": 'MantineNotifications',
     }),
   ],
@@ -36,13 +37,14 @@ export default defineConfig({
           react: 'React',
           'react-dom': 'ReactDOM',
           '@mantine/core': 'MantineCore',
+          '@mantine/hooks': 'MantineHooks',
           "@mantine/notifications": 'MantineNotifications',
         },
       },
-      external: ['react', 'react-dom', '@mantine/core', '@mantine/notifications'],
+      external: ['react', 'react-dom', '@mantine/core', '@mantine/hooks', '@mantine/notifications'],
     }
   },
   optimizeDeps: {
-    exclude: ['react', 'react-dom', '@mantine/core', '@mantine/notifications'],
+    exclude: ['react', 'react-dom', '@mantine/core', '@mantine/hooks', '@mantine/notifications'],
   },
 })
