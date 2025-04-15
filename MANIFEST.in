@@ -1,1 +1,2 @@
-recursive-include inventree_wireviz/templates *
+recursive-include inventree_wireviz/templates *.js *.html
+recursive-include inventree_wireviz/static *.js *.css

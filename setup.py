@@ -7,7 +7,6 @@ from inventree_wireviz.version import PLUGIN_VERSION
 with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
-
 setuptools.setup(
     name="inventree-wireviz-plugin",
     version=PLUGIN_VERSION,

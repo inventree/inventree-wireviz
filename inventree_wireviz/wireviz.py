@@ -10,15 +10,12 @@ import logging
 import os
 
 from django.conf import settings
-from django.template.loader import render_to_string
 from django.urls import path
 
 from plugin import InvenTreePlugin
-from plugin.mixins import PanelMixin, ReportMixin, SettingsMixin, UrlsMixin
+from plugin.mixins import ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin
 
-from build.views import BuildDetail
 from part.models import Part, PartCategory
-from part.views import PartDetail
 
 from .version import PLUGIN_VERSION
 
@@ -26,7 +23,7 @@ from .version import PLUGIN_VERSION
 logger = logging.getLogger('inventree')
 
 
-class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTreePlugin):
+class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, InvenTreePlugin):
     """"Wireviz plugin for InvenTree
     
     - Provides a custom panel for rendering wireviz diagrams
@@ -44,6 +41,9 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
     SLUG = "wireviz"
     TITLE = "Wireviz Plugin"
 
+    # Javascript file which renders custom plugin settings
+    ADMIN_SOURCE = "WirevizSettings.js"
+
     # Filenames and key constants
     HARNESS_SVG_FILE = "wireviz_harness.svg"
 
@@ -57,10 +57,15 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
             'description': 'Select the part category for wire harnesses',
             'model': 'part.partcategory',
         },
-        "WIREVIZ_PATH": {
-            'name': 'Wireviz Upload Path',
-            'description': 'Path to store uploaded wireviz template files (relative to media root)',
-            'default': 'wireviz',
+        "HARNESS_GROUP_VIEWERS": {
+            'name': 'Wire Harness Viewers',
+            'description': 'Select user group who can view wire harnesses',
+            'model': 'auth.group',
+        },
+        "HARNESS_GROUP_EDITORS": {
+            'name': 'Wire Harness Editors',
+            'description': 'Select user group who can edit wire harnesses',
+            'model': 'auth.group',
         },
         "DELETE_OLD_FILES": {
             'name': 'Delete Old Files',
@@ -87,6 +92,17 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
             'validator': bool,
         },
     }
+
+    def get_admin_context(self) -> dict:
+        """Return the context for the admin settings page."""
+
+        ctx = {
+            'templates': self.get_template_files(),
+        }
+
+        print("admin_context:", ctx)
+
+        return ctx
 
     def get_part_from_instance(self, instance):
         """Return a Part object from the given instance."""
@@ -123,15 +139,85 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
                 if bom_data := metadata.get(self.HARNESS_BOM_KEY, None):
                     context['wireviz_bom_data'] = bom_data
 
-    def get_panel_context(self, view, request, context):
-        """Return context information for the Wireviz panel."""
+    def get_harness_category(self):
+        """Return the wire harness category ID."""
 
-        try:
-            instance = view.get_object()
-        except AttributeError:
-            return context
+        if category_id := self.get_setting('HARNESS_CATEGORY'):
+            try:
+                category = PartCategory.objects.get(pk=category_id)
+                return category
+            except PartCategory.DoesNotExist:
+                logger.warning("Wireviz: Invalid wire harness category ID")
+                return None
+
+        return None
+
+    def user_can_view_harness(self, user) -> bool:
+        """Determine if the provided user can view wire harnesses."""
+
+        if user.is_superuser:
+            # Superuser can view everything
+            return True
+
+        if group_id := self.get_setting('HARNESS_GROUP_VIEWERS'):
+            # View group is specified - user must be a member of this group
+            return user.groups.filter(pk=group_id).exists()
+
+        # No group specified - user can view wire harnesses
+        return True
+    
+    def user_can_edit_harness(self, user) -> bool:
+        """Determine if the provided user can edit wire harnesses."""
+        if not self.user_can_view_harness(user):
+            return False
+        
+        if user.is_superuser:
+            # Superuser can edit everything
+            return True
+
+        if group_id := self.get_setting('HARNESS_GROUP_EDITORS'):
+            # Edit group is specified - user must be a member of this group
+            return user.groups.filter(pk=group_id).exists()
+
+        # No group specified - user can edit wire harnesses
+        return True
+
+    def should_display_panel(self, part, build, user):
+        """Determine if the wireviz panel should be displayed for the given part."""
+
+        # Part is not a Part instance
+        if not part or not isinstance(part, Part):
+            return False
+
+        # Part must be marked as an assembly item
+        if not part.assembly:
+            return False
+
+        # Check if the user is in a group that can view wire harnesses
+        if not self.user_can_view_harness(user):
+            return False
+
+        # If the part already has a wireviz diagram, show the panel
+        if part.get_metadata('wireviz'):
+            return True
+        
+        if build:
+            # Beyond this point, if we are displaying for a build order, we do not display the panel
+            return False
+        
+        # Check if the part has a wire harness category
+        if wireviz_category := self.get_harness_category():
+            valid_category_ids = [cat.id for cat in wireviz_category.get_descendants(include_self=True)]
+            return part.category and part.category.pk in valid_category_ids
+
+        # No reason not to!
+        return True
+
+    def panel_context_from_instance(self, instance):
 
         part = self.get_part_from_instance(instance)
+
+        context = {}
 
         if part and isinstance(part, Part):
 
@@ -160,53 +246,68 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
 
         return context
 
-    def get_custom_panels(self, view, request):
-        """Determine if custom panels should be displayed in the UI."""
+    def get_ui_dashboard_items(self, request, context=None, **kwargs):
+        """Return custom dashboard items for the wireviz plugin."""
+
+        user = getattr(request, 'user', None)
+
+        items = []
+
+        # Only show if user can *create* wireviz diagrams
+        if self.user_can_edit_harness(user):
+            items.append({
+                'key': 'wireviz',
+                'title': 'Create Wireviz Diagram',
+                'description': 'Create a new wireviz diagram from the dashboard',
+                'icon': 'ti:topology-star:outline',
+                'source': self.plugin_static_file('WirevizDashboard.js:renderWirevizDashboard'),
+            })
+    
+        return items
+
+    def get_ui_panels(self, request, context=None, **kwargs):
+        """Return custom UI panels for the wireviz plugin."""
+
+        from build.models import Build
+
+        context = context or {}
+
+        target_model = context.get('target_model', None)
+        target_id = context.get('target_id', None)
 
         panels = []
+        part = None
+        build = None
 
-        try:
-            instance = view.get_object()
-        except AttributeError:
-            return panels
-        
-        part = self.get_part_from_instance(instance)
+        if target_model == 'part':
+            try:
+                part = Part.objects.get(pk=target_id)
+            except Part.DoesNotExist:
+                part = None
 
-        # A valid part object has been found
-        if part and isinstance(part, Part):
+        elif target_model == 'build':
+            # Display on the "build" page too
+            try:
+                build = Build.objects.get(pk=target_id)
+                part = build.part
+            except Build.DoesNotExist:
+                part = None
 
-            add_panel = False
+        if self.should_display_panel(part, build, request.user):
 
-            # We are on the PartDetail or BuildDetail page
-            if isinstance(view, PartDetail) or isinstance(view, BuildDetail):
+            ctx = self.panel_context_from_instance(part)
 
-                logger.debug(f"Checking for wireviz file for part {part}")
+            ctx['part'] = part.pk
+            ctx['can_edit'] = self.user_can_edit_harness(request.user) and not build
 
-                metadata = part.get_metadata('wireviz')
-
-                if metadata:
-                    add_panel = True
-
-            if not add_panel and isinstance(view, PartDetail):
-                # Check if the Part belongs to the harness category
-                if harness_category := self.get_setting('HARNESS_CATEGORY'):
-                    try:
-                        category = PartCategory.objects.get(pk=harness_category)
-                        children = category.get_descendants(include_self=True)
-
-                        if part.category in children:
-                            add_panel = True
-
-                    except (PartCategory.DoesNotExist, ValueError):
-                        pass
-
-            if add_panel:
-                panels.append({
-                    'title': 'Harness Diagram',
-                    'icon': 'fas fa-project-diagram',
-                    'content_template': 'wireviz/harness_panel.html',
-                    'javascript_template': 'wireviz/harness_panel.js',
-                })
+            panels.append({
+                'key': 'wireviz',
+                'title': 'Harness Diagram',
+                'description': 'View wire harness diagram',
+                'icon': 'ti:topology-star:outline',
+                'context': ctx,
+                'source': self.plugin_static_file('WirevizPanel.js:renderWirevizPanel'),
+            })
         
         return panels
 
@@ -214,17 +315,12 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
         """Return a list of existing WireViz template files which have been uploaded."""
 
         templates = []
-        subdir = self.get_setting('WIREVIZ_PATH')
+        template_dir = os.path.join(settings.MEDIA_ROOT, 'wireviz')
 
-        if subdir:
-            path = os.path.join(settings.MEDIA_ROOT, subdir)
-            path = os.path.abspath(path)
-
-            if os.path.exists(path):
-                for f in os.listdir(path):
-                    if f.endswith('.wireviz'):
-                        template = os.path.join(subdir, f)
-                        templates.append(template)
+        if os.path.exists(template_dir):
+            for f in os.listdir(template_dir):
+                if f.endswith('.wireviz'):
+                    templates.append(f)
 
         return templates
 
@@ -239,25 +335,3 @@ class WirevizPlugin(PanelMixin, ReportMixin, SettingsMixin, UrlsMixin, InvenTree
             path('upload-template/', views.UploadTemplateView.as_view(), name='wireviz-upload-template'),
             path('delete-template/', views.DeleteTemplateView.as_view(), name='wireviz-delete-template'),
         ]
-
-    def get_settings_content(self, request):
-        """Custom settings content for the wireviz plugin page."""
-
-        ctx = {
-            'plugin': self,
-            'templates': self.get_template_files(),
-        }
-
-        try:
-            return render_to_string('wireviz/settings_panel.html', context=ctx, request=request)
-        except Exception as exp:
-            return f"""
-                <div class='panel-heading'>
-                    <h4>Template Error</h4>
-                </div>
-                <div class='panel-content'>
-                    <div class='alert alert-warning alert-block'>
-                    {str(exp)}
-                    </div>
-                </div>
-                """
