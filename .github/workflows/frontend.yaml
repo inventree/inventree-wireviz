@@ -20,7 +20,7 @@ jobs:
           node-version: "20"
       - name: Install Python Dependencies
         run: |
-          pip install --upgrade wheel setuptools twine
+          pip install --upgrade wheel setuptools twine build
       - name: Build Frontend
         run: |
           cd frontend
