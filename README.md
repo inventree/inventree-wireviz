@@ -35,7 +35,7 @@ The generated `.svg` can be used in report templates, for example as a reference
 
 You must have [graphviz](https://graphviz.org/) installed, and accessible by the InvenTree server.
 
-e.g. `apt-get install graphviz`
+e.g. `apt install graphviz`
 
 If installing in a container environment (e.g. Docker), the dockerfile will need to be extended to install the *graphviz* binaries
 
@@ -57,7 +57,10 @@ Once the plugin is installed, it needs to be enabled before it is available for 
 | Clear BOM Data | Remove existing BOM entries first, before creating new ones |
 | Add Part Image | Where available, embed part images in the generated harness diagram |
 
-Additionally, you must ensure that the *Enable event integration* setting is enabled in the *Plugin Settings* view:
+Additionally, you must ensure that the following plugin features are enabled on the InvenTree server:
+
+- Enable interface integration
+- Enable URL integration
 
 ![](./docs/event_plugin.png)
 
