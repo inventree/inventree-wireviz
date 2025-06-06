@@ -10,12 +10,22 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
       - name: Install Node.js
         uses: actions/setup-node@v2
         with:
           node-version: "20"
+      - name: Install Python Dependencies
+        run: |
+          pip install --upgrade wheel setuptools twine build
       - name: Build Frontend
         run: |
           cd frontend
           npm install
           npm run build
+      - name: Build Binary
+        run: |
+          python -m build
