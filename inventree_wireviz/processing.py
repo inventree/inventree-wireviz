@@ -90,30 +90,6 @@ class WirevizImportManager:
         # Attachment not created
         raise ValidationError("Error creating attachment file")
 
-    def prepend_templates(self):
-        """Prepend the contents of the wireviz template files to the wireviz file."""
-
-        prepend_data = ''
-
-        for template in self.plugin.get_template_files():
-            tf = os.path.abspath(os.path.join(settings.MEDIA_ROOT, template))
-
-            with open(tf, 'r') as f:
-
-                template_data = f.read()
-
-                try:
-                    yaml.safe_load(template_data)
-                except Exception as exc:
-                    self.add_error(f"Invalid YAML data in template file '{template}'")
-                    self.add_error(f"YAML parsing error: {exc}")
-                    continue
-
-                prepend_data += template_data
-                prepend_data += '\n\n'
-
-        return prepend_data
-
     def parse_wireviz_file(self, wv_file) -> Harness:
         """Process the provided wireviz file.
 
@@ -133,9 +109,6 @@ class WirevizImportManager:
                 {str(exc)},
                 "Not a valid YAML file",
             ])
-
-        # Prepend data from existing templates
-        wv_data = self.prepend_templates() + wv_data
 
         try:
             harness = parse_wireviz(wv_data, return_types='harness')
