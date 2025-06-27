@@ -1,7 +1,7 @@
 {
   "name": "inventree-wireviz",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -10,7 +10,7 @@
     "preview": "vite preview --host"
   },
   "dependencies": {
-    "@inventreedb/ui": "^0.1.0",
+    "@inventreedb/ui": "^0.2.3",
     "@tabler/icons-react": "^3.31.0"
   },
   "peerDependencies": {
