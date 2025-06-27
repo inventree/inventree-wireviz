@@ -96,11 +96,7 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
     def get_admin_context(self) -> dict:
         """Return the context for the admin settings page."""
 
-        ctx = {
-            'templates': self.get_template_files(),
-        }
-
-        print("admin_context:", ctx)
+        ctx = {}
 
         return ctx
 
@@ -311,19 +307,6 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
         
         return panels
 
-    def get_template_files(self):
-        """Return a list of existing WireViz template files which have been uploaded."""
-
-        templates = []
-        template_dir = os.path.join(settings.MEDIA_ROOT, 'wireviz')
-
-        if os.path.exists(template_dir):
-            for f in os.listdir(template_dir):
-                if f.endswith('.wireviz'):
-                    templates.append(f)
-
-        return templates
-
     def setup_urls(self):
         """Setup URL patterns for the wireviz plugin."""
 
@@ -332,6 +315,4 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
         return [
             path('upload/', views.UploadWirevizView.as_view(), name='wireviz-file-upload'),
             path('delete/', views.DeleteWirevizView.as_view(), name='wireviz-file-delete'),
-            path('upload-template/', views.UploadTemplateView.as_view(), name='wireviz-upload-template'),
-            path('delete-template/', views.DeleteTemplateView.as_view(), name='wireviz-delete-template'),
         ]
