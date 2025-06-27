@@ -17,7 +17,7 @@ from plugin.mixins import ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMi
 
 from part.models import Part, PartCategory
 
-from .version import PLUGIN_VERSION
+from . import PLUGIN_VERSION
 
 
 logger = logging.getLogger('inventree')
