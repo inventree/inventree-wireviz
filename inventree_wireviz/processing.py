@@ -170,7 +170,8 @@ class WirevizImportManager:
                 self.part.bom_items.all().delete()
             
             # Bulk create new Bom Items
-            BomItem.objects.bulk_create(self.bom_items)
+            for item in self.bom_items:
+                item.save()
 
         wv_file.file.seek(0)
         wv_data = wv_file.file.read().decode('utf-8')
