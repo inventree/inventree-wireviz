@@ -2,6 +2,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { viteExternalsPlugin } from 'vite-plugin-externals'
 
+const globals = {
+  react: 'React',
+  'react-dom': 'ReactDOM',
+  '@mantine/core': 'MantineCore',
+  "@mantine/notifications": 'MantineNotifications',
+};
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -19,8 +26,10 @@ export default defineConfig({
     jsx: 'preserve',
   },
   build: {
+    minify: true,
+    manifest: true,
+    sourcemap: true,
     cssCodeSplit: false,
-    manifest: false,
     rollupOptions: {
       preserveEntrySignatures: "exports-only",
       input: [
@@ -28,17 +37,20 @@ export default defineConfig({
         './src/WirevizSettings.tsx',
         './src/WirevizDashboard.tsx',
       ],
-      output: {
-        dir: '../inventree_wireviz/static',
-        entryFileNames: '[name].js',
-        assetFileNames: 'assets/[name].[ext]',
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-          '@mantine/core': 'MantineCore',
-          "@mantine/notifications": 'MantineNotifications',
+      output: [
+        {
+          dir: '../inventree_wireviz/static',
+          entryFileNames: '[name].js',
+          assetFileNames: 'assets/[name].[ext]',
+          globals: globals
         },
-      },
+        {
+          dir: '../inventree_wireviz/static',
+          entryFileNames: '[name]-[hash].min.js',
+          assetFileNames: 'assets/[name].[ext]',
+          globals: globals
+        }
+      ],
       external: ['react', 'react-dom', '@mantine/core', '@mantine/notifications'],
     }
   },
