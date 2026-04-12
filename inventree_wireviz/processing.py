@@ -223,7 +223,6 @@ class WirevizImportManager:
             spn = line.get('spn', None)
             quantity = line.get('qty', None)
             unit = line.get('unit', None)
-            note = 'Wireviz BOM item'
 
             try:
                 quantity = float(quantity)
