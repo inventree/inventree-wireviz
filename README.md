@@ -41,7 +41,7 @@ If installing in a container environment (e.g. Docker), the dockerfile will need
 
 ### Plugin Installation
 
-The plugin is available [via PIP](https://pypi.org/project/inventree-wireviz-plugin/). Follow the [InvenTree plugin installation guide](https://docs.inventree.org/en/latest/extend/plugins/install/) to install the plugin on your system
+The plugin is available [via PIP](https://pypi.org/project/inventree-wireviz-plugin/). Follow the [InvenTree plugin installation guide](https://docs.inventree.org/en/latest/plugins/install/) to install the plugin on your system
 
 ### Configuration
 
