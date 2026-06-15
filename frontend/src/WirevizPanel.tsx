@@ -178,10 +178,10 @@ function WirevizPanel({ context }: { context: InvenTreePluginContext }) {
           </Alert>
         )}
         <SimpleGrid cols={2}>
-          <Paper shadow='lg' p='md'>
+          <Paper shadow='sm' p='md'>
             <Stack gap='xs'>
               <Group justify='space-between'>
-                <Title order={4}>Harness Diagram</Title>
+                <Title order={4}>Wireviz Diagram</Title>
                 {canEdit && (
                   <Menu position='bottom-end' withArrow>
                     <Menu.Target>
@@ -222,7 +222,7 @@ function WirevizPanel({ context }: { context: InvenTreePluginContext }) {
               )}
             </Stack>
           </Paper>
-          <Paper shadow='lg' p='md'>
+          <Paper shadow='sm' p='md'>
             <Stack gap='xs'>
               <Title order={4}>Bill of Materials</Title>
               <Divider />

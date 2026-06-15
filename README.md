@@ -51,16 +51,31 @@ Once the plugin is installed, it needs to be enabled before it is available for 
 
 | Setting | Description |
 | --- | --- |
-| Wireviz Upload Path | Directory where wireviz *template* files can be uploaded, and referenced by wireviz. This is an *advanced* option. Refer to the wireviz docs for more information on templates. |
+| Category Parameter | A category parameter template (scoped to part categories) whose value determines whether the Harness Diagram panel is shown. See [Category Parameter](#category-parameter) below. |
+| Wire Harness Viewers | User group whose members are allowed to *view* harness diagrams. If unset, all users may view. |
+| Wire Harness Editors | User group whose members are allowed to *upload/edit* harness diagrams. If unset, all users may edit. |
 | Delete Old Files | Remove old harness diagram files when a new `.wireviz` file is uploaded |
 | Extract BOM Data | Extract BOM data from harness file and generate new BOM entries |
 | Clear BOM Data | Remove existing BOM entries first, before creating new ones |
-| Add Part Image | Where available, embed part images in the generated harness diagram |
+
+#### Category Parameter
+
+The **Category Parameter** setting controls which parts automatically show the Harness Diagram panel, without requiring a wireviz file to already be attached.
+
+1. Create a *Parameter Template* in InvenTree that is scoped to **Part Categories** (e.g. `Is Wire Harness`).
+2. Select that template in the **Category Parameter** plugin setting.
+3. On any Part Category that represents a wire harness assembly, add that parameter and set its value to `true` or `yes`.
+
+When a user opens a Part whose category (or any ancestor category) has this parameter set to `true`/`yes`, the Harness Diagram panel is displayed — even before a `.wireviz` file has been uploaded. This lets users upload a diagram directly from the panel rather than having to attach the file first.
+
+> **Note**
+> The check walks up the full category hierarchy, so setting the parameter on a parent category is inherited by all child categories.
 
 Additionally, you must ensure that the following plugin features are enabled on the InvenTree server:
 
 - Enable interface integration
 - Enable URL integration
+- Enable report integration
 
 ![](./docs/event_plugin.png)
 
@@ -68,7 +83,10 @@ Additionally, you must ensure that the following plugin features are enabled on 
 
 ### Uploading Wireviz File
 
-To generate a wiring harness diagram for a specific Part, upload a (valid) wireviz yaml file. The file **must* have the `.wireviz` extension to be recognized by the plugin.
+To generate a wiring harness diagram for a specific Part, upload a (valid) wireviz yaml file. The file **must** have the `.wireviz` extension to be recognized by the plugin.
+
+> **Note**
+> The Part must be marked as an **assembly** in InvenTree for the Harness Diagram panel to be displayed.
 
 When the file is uploaded to the server, the plugin is notified and begins the process of generating the harness diagram. If successful, a `.svg` file is attached to the part instance:
 
@@ -80,25 +98,43 @@ When a Part has a valid harness diagram (i.e. generated without any critical err
 
 ![](./docs/harness_panel.png)
 
+The panel is also displayed on the **Build Order** page for any build whose part has a harness diagram. On a build order the panel is read-only — uploading or deleting the diagram must be done from the Part page.
+
 > **Note**
 > You may need to reload the page before this panel is visible
 
 > **Warning**
 > Any warnings or errors which were raised during the process will be displayed here
 
+### Dashboard Item
+
+Users who have edit permission see a **Create Wireviz Diagram** item on the InvenTree dashboard. This provides a quick shortcut for starting a new harness without first navigating to a specific Part.
+
 ### BOM Extraction
 
-If enabled, the plugin will attempt to generate a linked Bill of Materials based on the data provided in the file. Part linking is performed based on the `pn` (part number) attribute in the wireviz BOM.
+If enabled, the plugin will attempt to generate a linked Bill of Materials based on the data provided in the file. The plugin tries several strategies to match each BOM line item to an existing InvenTree part, in the following order:
 
-For each line item in the uploaded BOM, the plugin attempts to match the `pn` field to an existing part in the InvenTree database. If a matching part is not found, this is marked with a warning in the simplified BOM table in the [harness diagram panel](#harness-diagram-panel).
+1. `pn` → part IPN
+2. `pn` → part name
+3. `description` → part description
+4. `mpn` → manufacturer part MPN
+5. `spn` → supplier part SKU
+6. For wire entries (description starting with `Wire,`), the wire color suffix is appended to the `pn` and the IPN/name lookup is retried (e.g. `26AWG-PTFE` → `26AWG-PTFE-YE` for a yellow wire)
+
+If a matching part is not found for a line item, this is marked with a warning in the simplified BOM table in the [harness diagram panel](#harness-diagram-panel).
 
 ### Reports
 
-The generated diagram can be used in certain reports (such as the Build Order Report). If a wiring harness diagram is available for a Part, it is included in the report context as a variable named `wireviz_svg_file`.
+The generated diagram can be used in certain reports (such as the Build Order Report). If a wiring harness diagram is available for a Part, the following variables are injected into the report context:
+
+| Variable | Description |
+| --- | --- |
+| `wireviz_svg_file` | Filename of the generated `.svg` image |
+| `wireviz_bom_data` | List of BOM line items extracted from the harness file |
 
 > **Note**
-> The provided variable refers to the *filename* of the `.svg` image - not the file itself.
-> Use the `{% encode_svg_image %}` template tag to render the image file.
+> `wireviz_svg_file` refers to the *filename* of the `.svg` image — not the file itself.
+> Use the `{% encode_svg_image %}` template tag to render the image.
 
 A very simple example is shown below:
 
