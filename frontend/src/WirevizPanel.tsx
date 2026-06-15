@@ -189,7 +189,7 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
 }
 
 
-export function renderWirevizPanel(context: InvenTreePluginContext) {
+export function RenderWirevizPanel(context: InvenTreePluginContext) {
     checkPluginVersion(context);
     return <WirevizPanel context={context} />;
 }

@@ -256,7 +256,7 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
                 'title': 'Create Wireviz Diagram',
                 'description': 'Create a new wireviz diagram from the dashboard',
                 'icon': 'ti:topology-star:outline',
-                'source': self.plugin_static_file('WirevizDashboard.js:renderWirevizDashboard'),
+                'source': self.plugin_static_file('WirevizDashboard.js:RenderWirevizDashboard'),
             })
     
         return items
@@ -302,7 +302,7 @@ class WirevizPlugin(ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin, I
                 'description': 'View wire harness diagram',
                 'icon': 'ti:topology-star:outline',
                 'context': ctx,
-                'source': self.plugin_static_file('WirevizPanel.js:renderWirevizPanel'),
+                'source': self.plugin_static_file('WirevizPanel.js:RenderWirevizPanel'),
             })
         
         return panels
