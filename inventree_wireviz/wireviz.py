@@ -125,7 +125,7 @@ class WirevizPlugin(
             return False
 
         # Check if this category (or any parent category) has the specified parameter
-        for cat in category.get_ancestors(include_self=True):
+        for cat in category.get_ancestors(include_self=True).order_by('-level'):
             parameter = cat.parameters_list.filter(template=template).first()
 
             if not parameter:
