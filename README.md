@@ -51,11 +51,25 @@ Once the plugin is installed, it needs to be enabled before it is available for 
 
 | Setting | Description |
 | --- | --- |
-| Wireviz Upload Path | Directory where wireviz *template* files can be uploaded, and referenced by wireviz. This is an *advanced* option. Refer to the wireviz docs for more information on templates. |
+| Category Parameter | A category parameter template (scoped to part categories) whose value determines whether the Harness Diagram panel is shown. See [Category Parameter](#category-parameter) below. |
+| Wire Harness Viewers | User group whose members are allowed to *view* harness diagrams. If unset, all users may view. |
+| Wire Harness Editors | User group whose members are allowed to *upload/edit* harness diagrams. If unset, all users may edit. |
 | Delete Old Files | Remove old harness diagram files when a new `.wireviz` file is uploaded |
 | Extract BOM Data | Extract BOM data from harness file and generate new BOM entries |
 | Clear BOM Data | Remove existing BOM entries first, before creating new ones |
-| Add Part Image | Where available, embed part images in the generated harness diagram |
+
+#### Category Parameter
+
+The **Category Parameter** setting controls which parts automatically show the Harness Diagram panel, without requiring a wireviz file to already be attached.
+
+1. Create a *Parameter Template* in InvenTree that is scoped to **Part Categories** (e.g. `Is Wire Harness`).
+2. Select that template in the **Category Parameter** plugin setting.
+3. On any Part Category that represents a wire harness assembly, add that parameter and set its value to `true` or `yes`.
+
+When a user opens a Part whose category (or any ancestor category) has this parameter set to `true`/`yes`, the Harness Diagram panel is displayed — even before a `.wireviz` file has been uploaded. This lets users upload a diagram directly from the panel rather than having to attach the file first.
+
+> **Note**
+> The check walks up the full category hierarchy, so setting the parameter on a parent category is inherited by all child categories.
 
 Additionally, you must ensure that the following plugin features are enabled on the InvenTree server:
 
