@@ -42,7 +42,7 @@ function WirevizSettings({context}: {context: InvenTreePluginContext}) {
 }
 
 
-export function RenderPluginSettings(context: InvenTreePluginContext) {
+export function renderPluginSettings(context: InvenTreePluginContext) {
 
     return (
         <WirevizSettings context={context} />

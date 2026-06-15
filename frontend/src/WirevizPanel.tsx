@@ -3,7 +3,7 @@
 import { checkPluginVersion, type InvenTreePluginContext } from '@inventreedb/ui';
 import { apiUrl, getDetailUrl, navigateToLink, ModelType } from '@inventreedb/ui';
 import { ActionIcon, Alert, Anchor, Divider, Group, Image, Menu, Paper, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core';
-import { IconDotsVertical, IconFile, IconTrash, IconUpload } from '@tabler/icons-react';
+import { IconDotsVertical, IconExclamationCircle, IconFile, IconTrash, IconUpload } from '@tabler/icons-react';
 import { useMemo } from 'react';
 
 
@@ -98,6 +98,10 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
         }
     });
 
+    const hasBom : boolean = useMemo(() => {
+        return bomRows && bomRows.length > 0;
+    }, [bomRows]);
+
     return (
         <>
         {canEdit && newDiagram.modal}
@@ -144,7 +148,7 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
             {wirevizDiagram ? (
                 <Image src={wirevizDiagram} alt="Wireviz diagram" />
             ) : (
-                <Alert color="red" title={"No Diagram Available"}>
+                <Alert color="red" title={"No Diagram Available"} icon={<IconExclamationCircle />}>
                     <Text>No Wireviz diagram available for this part</Text>
                 </Alert>
             )}
@@ -154,22 +158,28 @@ function WirevizPanel({context}: {context: InvenTreePluginContext}) {
         <Stack gap="xs">
             <Title order={4}>Bill of Materials</Title>
             <Divider />
-            <Table striped>
-                <Table.Thead>
-                    <Table.Tr>
-                        <Table.Th>ID</Table.Th>
-                        <Table.Th>Designators</Table.Th>
-                        <Table.Th>Description</Table.Th>
-                        <Table.Th>Quantity</Table.Th>
-                        <Table.Th>Part</Table.Th>
-                    </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                    {bomRows.map((row: any) => (
-                        <WirevizBomRow row={row} context={context}/>
-                    ))}
-                </Table.Tbody>
-            </Table>
+            {hasBom ? (
+                <Table striped>
+                    <Table.Thead>
+                        <Table.Tr>
+                            <Table.Th>ID</Table.Th>
+                            <Table.Th>Designators</Table.Th>
+                            <Table.Th>Description</Table.Th>
+                            <Table.Th>Quantity</Table.Th>
+                            <Table.Th>Part</Table.Th>
+                        </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                        {bomRows.map((row: any) => (
+                            <WirevizBomRow row={row} context={context}/>
+                        ))}
+                    </Table.Tbody>
+                </Table>
+            ) : (
+                <Alert color="yellow" title={"No BOM Data"} icon={<IconExclamationCircle />}>
+                    <Text>No BOM data available for this part</Text>
+                </Alert>
+            )}
         </Stack>
         </Paper>
         </SimpleGrid>
