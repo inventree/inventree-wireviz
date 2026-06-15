@@ -56,6 +56,9 @@ class WirevizPlugin(
             'name': 'Category Parameter',
             'description': 'Parameter used to specify wire harness categories',
             'model': 'common.parametertemplate',
+            "model_filters": {
+                "for_model": "partcategory"
+            }
         },
         'HARNESS_GROUP_VIEWERS': {
             'name': 'Wire Harness Viewers',
