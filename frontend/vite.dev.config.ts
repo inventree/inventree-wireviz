@@ -1,7 +1,8 @@
 // Primary vite config - we extend this for dev mode
-import { resolve } from 'node:path';
-import { defineConfig, mergeConfig } from 'vite'
+import { defineConfig } from 'vite'
 import { viteExternalsPlugin } from 'vite-plugin-externals'
+import InventreeHmrPlugin from '@inventreedb/ui/vite';
+import react from "@vitejs/plugin-react-swc"
 import viteConfig, { externalLibs } from './vite.config'
 
 /**
@@ -33,7 +34,11 @@ export default defineConfig((cfg) => {
   delete config.optimizeDeps;
 
   config.plugins = [
+    react({
+      reactRefreshHost: 'http://localhost:5173',
+    }),
     viteExternalsPlugin(externalLibs),
+    InventreeHmrPlugin()
   ];
 
   return config;
