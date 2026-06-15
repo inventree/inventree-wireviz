@@ -43,7 +43,7 @@ function WirevizDashboard({ context }: { context: InvenTreePluginContext }) {
 }
 
 
-export function renderWirevizDashboard(context: InvenTreePluginContext) {
+export function RenderWirevizDashboard(context: InvenTreePluginContext) {
     checkPluginVersion(context);
     return (
         <WirevizDashboard context={context} />
