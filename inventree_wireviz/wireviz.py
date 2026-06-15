@@ -35,7 +35,7 @@ class WirevizPlugin(
     DESCRIPTION = 'Wireviz plugin for InvenTree'
     VERSION = PLUGIN_VERSION
 
-    MIN_VERSION = '0.12.0'
+    MIN_VERSION = '1.4.0'
 
     NAME = 'Wireviz'
     SLUG = 'wireviz'
