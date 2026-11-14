@@ -1,8 +1,8 @@
-"""DRF views for the wireviz plugin"""
+"""DRF views for the wireviz plugin."""
 
+from InvenTree.mixins import CreateAPI
 from rest_framework import permissions
 from rest_framework.response import Response
-from InvenTree.mixins import CreateAPI
 
 from .serializers import WirevizDeleteSerializer, WirevizUploadSerializer
 
@@ -15,7 +15,6 @@ class UploadWirevizView(CreateAPI):
 
     def post(self, request, *args, **kwargs):
         """Handle POST request for uploading a new wireviz file."""
-
         serializer = WirevizUploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -32,7 +31,6 @@ class DeleteWirevizView(CreateAPI):
 
     def post(self, request, *args, **kwargs):
         """Handle POST request for deleting a wireviz file."""
-
         serializer = WirevizDeleteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

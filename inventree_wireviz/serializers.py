@@ -1,9 +1,8 @@
 """DRF serializers for the wireviz plugin."""
 
+from part.models import Part
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-
-from part.models import Part
 
 from .processing import WirevizImportManager
 
@@ -21,13 +20,12 @@ class WirevizDeleteSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         """Remove wireviz harness from the specified part."""
-
         part = self.validated_data['part']
         part.set_metadata('wireviz', None)
 
 
 class WirevizUploadSerializer(serializers.Serializer):
-    """Serializer for uploading a wireviz file"""
+    """Serializer for uploading a wireviz file."""
 
     part = serializers.PrimaryKeyRelatedField(
         queryset=Part.objects.all(),
@@ -45,12 +43,11 @@ class WirevizUploadSerializer(serializers.Serializer):
 
     def validate_file(self, file):
         """Validate the uploaded wireviz file."""
-
         try:
             mgr = WirevizImportManager()
             mgr.parse_wireviz_file(file.file)
-        except ValidationError as e:
-            raise e
+        except ValidationError:
+            raise
         except Exception:
             raise ValidationError("Error parsing wireviz file")
 
@@ -58,7 +55,6 @@ class WirevizUploadSerializer(serializers.Serializer):
 
     def save(self, user=None, **kwargs):
         """Save the validated serializer."""
-
         data = self.validated_data
 
         wv_file = data['file']

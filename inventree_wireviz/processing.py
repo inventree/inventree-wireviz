@@ -2,33 +2,29 @@
 
 import logging
 import os
+
 import yaml
-
-from django.core.files.base import ContentFile
-from rest_framework.exceptions import ValidationError
-
 from company.models import ManufacturerPart, SupplierPart
+from django.core.files.base import ContentFile
 from InvenTree.helpers import str2bool
 from part.models import BomItem, Part
-from plugin.registry import registry
-
+from plugin import registry
+from rest_framework.exceptions import ValidationError
 from wireviz.Harness import Harness
 from wireviz.wireviz import parse as parse_wireviz
-
 
 logger = logging.getLogger("inventree")
 
 
 def get_unit_registry():
-    """Return the pint unit registry"""
-
+    """Return the pint unit registry."""
     from InvenTree.api_version import INVENTREE_API_VERSION
 
     if INVENTREE_API_VERSION >= 117:
         # Modern version of InvenTree supports custom unit registry
         import InvenTree.conversion
         return InvenTree.conversion.get_unit_registry()
-    
+
     # Fallback to the default pint unit registry
     import pint
     return pint.UnitRegistry()
@@ -39,7 +35,6 @@ class WirevizImportManager:
 
     def __init__(self):
         """Initialize the WirevizImportManager."""
-        
         # Grab a reference to the wireviz plugin
         self.plugin = registry.get_plugin('wireviz')
 
@@ -53,12 +48,11 @@ class WirevizImportManager:
 
     def create_attachment(self, part, attachment, comment, user):
         """Upload a file attachment to the specified part.
-        
+
         Note: We support both the "legacy" and "modern" attachment table.
 
         Ref: https://github.com/inventree/InvenTree/pull/7420
         """
-
         # First, try the "modern" attachment table
         try:
             from common.models import Attachment
@@ -93,11 +87,10 @@ class WirevizImportManager:
         """Process the provided wireviz file.
 
         Returns a wireviz Harness object (if the file is valid)
-        
+
         Raises:
             ValidationError: If the file is invalid (for some reason)
         """
-        
         wv_file.seek(0)
         wv_data = wv_file.read().decode('utf-8')
 
@@ -121,12 +114,11 @@ class WirevizImportManager:
 
     def cleanup_old_files(self, part: Part):
         """Remove old files from an existing Part instance."""
-
         metadata = part.get_metadata('wireviz')
 
         if not metadata:
             return
-        
+
         file_keys = [
             'source_file',
             'svg_file',
@@ -147,7 +139,6 @@ class WirevizImportManager:
 
     def import_harness(self, wv_file, part: Part, user):
         """Import a wireviz file into the specified part."""
-        
         logger.info("Importing wireviz harness file")
 
         # Determine runtime settings
@@ -168,7 +159,7 @@ class WirevizImportManager:
         if save_bom_data:
             if clear_bom_data:
                 self.part.bom_items.all().delete()
-            
+
             # Bulk create new Bom Items
             for item in self.bom_items:
                 item.save()
@@ -207,7 +198,6 @@ class WirevizImportManager:
 
     def extract_bom_data(self, harness: Harness):
         """Extract BOM data from the provided harness file."""
-
         logger.info("WireViz: Extracting BOM data from wireviz file")
 
         bom = harness.bom()
@@ -279,19 +269,18 @@ class WirevizImportManager:
                     reference=' '.join(designators),
                     note="Wireviz BOM item"
                 ))
-    
+
     def convert_quantity(self, quantity, unit, base_unit):
         """Convert a provided physical quantity into the "base units" of the part.
-        
+
         Args:
             quantity: The quantity to convert
             unit: The unit of the quantity
             base_unit: The base unit of the part
-        
+
         Returns:
             The converted quantity, or the original quantity if conversion failed
         """
-
         # Ignore unit if quantity not given
         # Will be specified in the part units anyway
         if not unit:
@@ -316,7 +305,7 @@ class WirevizImportManager:
         """Add an error message."""
         self.errors.append(msg)
         logger.error(f"WireViz: {msg}")
-    
+
     def add_warning(self, msg: str):
         """Add a warning message."""
         self.warnings.append(msg)
@@ -324,19 +313,18 @@ class WirevizImportManager:
 
     def match_part(self, line: dict):
         """Attempt to match a BOM line item to an InvenTree part.
-        
+
         Arguments:
             line: A dictionary of BOM line item data
-        
+
         Returns:
             A Part instance, or None
         """
-
         # Extract data from BOM entry
-        pn = line.get('pn', None)
-        description = line.get('description', None)
-        mpn = line.get('mpn', None)
-        spn = line.get('spn', None)
+        pn = line.get('pn')
+        description = line.get('description')
+        mpn = line.get('mpn')
+        spn = line.get('spn')
 
         # Match pn -> part.IPN
         if pn:
@@ -360,7 +348,7 @@ class WirevizImportManager:
             results = ManufacturerPart.objects.filter(MPN=mpn)
             if results.count() == 1:
                 return results.first().part
-        
+
         # Match spn -> supplier_part.SKU
         if spn:
             results = SupplierPart.objects.filter(SKU=spn)
@@ -389,16 +377,15 @@ class WirevizImportManager:
 
             if results.count() == 1:
                 return results.first()
-        
+
             # Match wire_pn -> part.name
             results = Part.objects.filter(name=wire_pn)
 
             if results.count() == 1:
                 return results.first()
-    
+
     def generate_svg_output(self, harness: Harness, filename: str, user):
         """Generate SVG output from a wireviz harness."""
-
         logger.info("WirevizPlugin: Generating SVG output for wireviz harness")
 
         graph = harness.create_graph()
