@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 
 import importlib
 import importlib.util
 import os
-import setuptools
 
+import setuptools
 
 """Read the plugin version from the source code."""
 module_path = os.path.join(

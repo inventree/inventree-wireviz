@@ -21,7 +21,6 @@ class WirevizDeleteSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         """Remove wireviz harness from the specified part."""
-
         part = self.validated_data['part']
         part.set_metadata('wireviz', None)
 
@@ -45,7 +44,6 @@ class WirevizUploadSerializer(serializers.Serializer):
 
     def validate_file(self, file):
         """Validate the uploaded wireviz file."""
-
         try:
             mgr = WirevizImportManager()
             mgr.parse_wireviz_file(file.file)
@@ -58,7 +56,6 @@ class WirevizUploadSerializer(serializers.Serializer):
 
     def save(self, user=None, **kwargs):
         """Save the validated serializer."""
-
         data = self.validated_data
 
         wv_file = data['file']
