@@ -19,7 +19,7 @@ logger = logging.getLogger("inventree")
 
 
 def get_unit_registry():
-    """Return the pint unit registry"""
+    """Return the pint unit registry."""
     from InvenTree.api_version import INVENTREE_API_VERSION
 
     if INVENTREE_API_VERSION >= 117:
@@ -50,7 +50,7 @@ class WirevizImportManager:
 
     def create_attachment(self, part, attachment, comment, user):
         """Upload a file attachment to the specified part.
-        
+
         Note: We support both the "legacy" and "modern" attachment table.
 
         Ref: https://github.com/inventree/InvenTree/pull/7420
@@ -89,7 +89,7 @@ class WirevizImportManager:
         """Process the provided wireviz file.
 
         Returns a wireviz Harness object (if the file is valid)
-        
+
         Raises:
             ValidationError: If the file is invalid (for some reason)
         """
@@ -274,12 +274,12 @@ class WirevizImportManager:
 
     def convert_quantity(self, quantity, unit, base_unit):
         """Convert a provided physical quantity into the "base units" of the part.
-        
+
         Args:
             quantity: The quantity to convert
             unit: The unit of the quantity
             base_unit: The base unit of the part
-        
+
         Returns:
             The converted quantity, or the original quantity if conversion failed
         """
@@ -315,10 +315,10 @@ class WirevizImportManager:
 
     def match_part(self, line: dict):
         """Attempt to match a BOM line item to an InvenTree part.
-        
+
         Arguments:
             line: A dictionary of BOM line item data
-        
+
         Returns:
             A Part instance, or None
         """

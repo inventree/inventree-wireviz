@@ -1,3 +1,4 @@
+"""Setup script for the inventree-wireviz plugin."""
 
 import importlib
 import importlib.util

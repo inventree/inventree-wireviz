@@ -26,7 +26,7 @@ class WirevizDeleteSerializer(serializers.Serializer):
 
 
 class WirevizUploadSerializer(serializers.Serializer):
-    """Serializer for uploading a wireviz file"""
+    """Serializer for uploading a wireviz file."""
 
     part = serializers.PrimaryKeyRelatedField(
         queryset=Part.objects.all(),

@@ -1,4 +1,4 @@
-"""DRF views for the wireviz plugin"""
+"""DRF views for the wireviz plugin."""
 
 from rest_framework import permissions
 from rest_framework.response import Response
