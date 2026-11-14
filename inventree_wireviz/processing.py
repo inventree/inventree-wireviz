@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 from company.models import ManufacturerPart, SupplierPart
 from InvenTree.helpers import str2bool
 from part.models import BomItem, Part
-from plugin.registry import registry
+from plugin import registry
 
 from wireviz.Harness import Harness
 from wireviz.wireviz import parse as parse_wireviz
