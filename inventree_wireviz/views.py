@@ -1,9 +1,8 @@
 """DRF views for the wireviz plugin."""
 
+from InvenTree.mixins import CreateAPI
 from rest_framework import permissions
 from rest_framework.response import Response
-
-from InvenTree.mixins import CreateAPI
 
 from .serializers import WirevizDeleteSerializer, WirevizUploadSerializer
 

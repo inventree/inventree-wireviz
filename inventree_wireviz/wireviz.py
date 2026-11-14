@@ -11,7 +11,6 @@ import os
 
 from django.conf import settings
 from django.urls import path
-
 from part.models import Part, PartCategory
 from plugin import InvenTreePlugin
 from plugin.mixins import ReportMixin, SettingsMixin, UrlsMixin, UserInterfaceMixin

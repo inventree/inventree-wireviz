@@ -1,9 +1,8 @@
 """DRF serializers for the wireviz plugin."""
 
+from part.models import Part
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-
-from part.models import Part
 
 from .processing import WirevizImportManager
 
@@ -47,8 +46,8 @@ class WirevizUploadSerializer(serializers.Serializer):
         try:
             mgr = WirevizImportManager()
             mgr.parse_wireviz_file(file.file)
-        except ValidationError as e:
-            raise e
+        except ValidationError:
+            raise
         except Exception:
             raise ValidationError("Error parsing wireviz file")
 

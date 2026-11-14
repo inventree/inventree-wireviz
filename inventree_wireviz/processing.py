@@ -3,17 +3,15 @@
 import logging
 import os
 
-from django.core.files.base import ContentFile
-
 import yaml
-from rest_framework.exceptions import ValidationError
-from wireviz.Harness import Harness
-from wireviz.wireviz import parse as parse_wireviz
-
 from company.models import ManufacturerPart, SupplierPart
+from django.core.files.base import ContentFile
 from InvenTree.helpers import str2bool
 from part.models import BomItem, Part
 from plugin import registry
+from rest_framework.exceptions import ValidationError
+from wireviz.Harness import Harness
+from wireviz.wireviz import parse as parse_wireviz
 
 logger = logging.getLogger("inventree")
 
